@@ -15,20 +15,37 @@
 const AMP_KEYS = new Set(['aatk', 'adec', 'asus', 'arel', 'menv']);
 const FILT_KEYS = new Set(['cutoff', 'reso', 'mode', 'envamt', 'keytrack', 'fatk', 'fdec', 'fsus', 'frel']);
 const isFxD = d => d.kind === 'fx' || d.key === 'mfx' || d.key === 'mwet', isSeqD = d => !!d.seq || d.group === 'Sequencer';
+/* Section padlocks (2026-11-23): each panel's padlock keeps its part out of every roll: its own dice rest (dimmed) and
+   the Everything die passes over it. Kept with the patch (state.panelLocks). */
+if (!state.panelLocks || typeof state.panelLocks !== 'object') state.panelLocks = {};
+const panelOf = d => (isSeqD(d) ? 'seq' : AMP_KEYS.has(d.key) ? 'amp' : FILT_KEYS.has(d.key) ? 'filt' : isFxD(d) ? 'fx' : 'synth');
 const PART = {
   amp: d => AMP_KEYS.has(d.key),
   filt: d => FILT_KEYS.has(d.key),
   fx: isFxD,
   synth: d => !AMP_KEYS.has(d.key) && !FILT_KEYS.has(d.key) && !isFxD(d) && !isSeqD(d),
-  all: d => !isSeqD(d),
+  all: d => !isSeqD(d) && !state.panelLocks[panelOf(d)],
 };
+function updatePanelLocks() {
+  document.querySelectorAll('[data-panellock]').forEach(b => {
+    const k = b.dataset.panellock, on = !!state.panelLocks[k];
+    b.setAttribute('aria-pressed', on); b.innerHTML = lockIcon(on);
+    b.setAttribute('aria-label', `${on ? 'Unlock' : 'Lock'} this section for the dice`);
+    b.closest('.panel').classList.toggle('plocked', on);
+  });
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-panellock]'); if (!b) return; const k = b.dataset.panellock; state.panelLocks[k] = !state.panelLocks[k]; updatePanelLocks(); save(); });
+updatePanelLocks();
 function rollPart(part, side, s) {
   const amt = 0.35 + 0.65 * s, inPart = PART[part];
   const sides = side === 'M' ? ['A', 'B'] : [side];
   const old = { A: state.A.slice(), B: state.B.slice(), C: state.C.slice(), t: tables.map(t => ({ A: t.A, B: t.B })), smp: { ...state.smp } };
   if (sides.length === 2) randomizeAll(); else randomizeSide(sides[0]);
   DEFS.forEach((d, i) => { if (!inPart(d)) { state.A[i] = old.A[i]; state.B[i] = old.B[i]; state.C[i] = old.C[i]; } });
-  if (part !== 'synth' && part !== 'all') { tables.forEach((t, k) => { t.A = old.t[k].A; t.B = old.t[k].B; }); state.smp = old.smp; }
+  // the FX dice also move the two FX macros (they stay at 50% on a plain roll, so the dice seemed not to reach them)
+  if (part === 'fx' || (part === 'all' && !state.panelLocks.fx)) for (const k of sides) for (const key of ['mfx', 'mwet']) { const i = IX[key]; if (isFree(i)) state[k][i] = 0.2 + rnd() * 0.6; }
+  const wavesToo = part === 'synth' || (part === 'all' && !state.panelLocks.synth);
+  if (!wavesToo) { tables.forEach((t, k) => { t.A = old.t[k].A; t.B = old.t[k].B; }); state.smp = old.smp; }
   if (amt < 0.98) {
     for (const k of sides) {
       DEFS.forEach((d, i) => {
@@ -36,15 +53,15 @@ function rollPart(part, side, s) {
         if (o === n || !inPart(d)) return;
         state[k][i] = d.opts ? (rnd() < amt ? n : o) : quant(d, o + (n - o) * amt);
       });
-      if (part === 'synth' || part === 'all') { tables.forEach((t, j) => { if (rnd() >= amt) t[k] = old.t[j][k]; }); if (rnd() >= amt) state.smp[k] = old.smp[k]; }
+      if (wavesToo) { tables.forEach((t, j) => { if (rnd() >= amt) t[k] = old.t[j][k]; }); if (rnd() >= amt) state.smp[k] = old.smp[k]; }
     }
     if (sides.length === 2) state.C = state.C.map((c, i) => old.C[i] + (c - old.C[i]) * amt);
   }
-  for (const k of sides) { if (part === 'synth' || part === 'all') levelMatch(k); if (part === 'synth' || part === 'all' || part === 'filt') { sineGuard(k); loudnessGuard(k); } }
+  for (const k of sides) { if (wavesToo) levelMatch(k); if (wavesToo || (part === 'filt') || (part === 'all' && !state.panelLocks.filt)) { sineGuard(k); loudnessGuard(k); } }
 }
 const rollSound = (side, s) => rollPart('synth', side, s);
 // the header's die: everything, both sides (the sound by parts at this strength, and the sequences)
-const rollAll = s => { rollPart('all', 'M', s); rollSeq('M', s); };
+const rollAll = s => { rollPart('all', 'M', s); if (!state.panelLocks.seq) rollSeq('M', s); };
 /* Sequence: a full roll at the far end (as before: new rate, generator, rhythm, density, speed and octave; in Morph also a
    new shared scale). Below that the pattern keeps its rate and length, and each note is re-rolled with chance amt (a new
    melody in the scale), with rests and velocities shuffled in proportion. */
@@ -78,10 +95,15 @@ function makePath(what, side) {
   const base = keepState(), undo = snapshot();
   if (what === 'all') rollAll(1); else if (what === 'seq') rollSeq(side, 1); else rollPart(what, side, 1);
   const full = keepState();
+  // locked sequencer knobs (Density, Octave) and a locked Seq section stay where they are
+  for (const k of ['A', 'B']) for (const key of ['sqdens', 'sqspeed', 'sqoct']) if (state.locks[key]) full[k][IX[key]] = base[k][IX[key]];
+  const seqHeld = what === 'all' && state.panelLocks.seq;
+  if (seqHeld) full.seq = JSON.parse(JSON.stringify(base.seq));
   putState(base);
   let part = null;   // sequences below the far end: a new melody in the same rhythm grid, step by step
   if (what === 'seq' || what === 'all') {
-    rollSeq(side === 'M' || what === 'all' ? 'M' : side, 0.6); part = JSON.parse(JSON.stringify(state.seq)); putState(base);
+    if (!seqHeld) rollSeq(side === 'M' || what === 'all' ? 'M' : side, 0.6);
+    part = JSON.parse(JSON.stringify(state.seq)); putState(base);
   }
   const u = DEFS.map(() => rnd()), ut = tables.map(() => ({ A: rnd(), B: rnd() })), us = rnd();
   const useq = { A: state.seq.A.steps.map(() => rnd()), B: state.seq.B.steps.map(() => rnd()) };
@@ -153,7 +175,8 @@ document.querySelectorAll('.dicetrack').forEach(el => {
     });
   };
   el.addEventListener('pointerdown', e => {
-    e.preventDefault(); pid = e.pointerId; el.setPointerCapture(pid); el.classList.add('dragging');
+    e.preventDefault(); if (what !== 'all' && state.panelLocks[what]) return;   // a locked section's dice rest
+    pid = e.pointerId; el.setPointerCapture(pid); el.classList.add('dragging');
     dieHeld = { what, side, x: 0, P: makePath(what, side), used: false };
     const x = fromY(e.clientY, e.clientX); place(x); live(x);
   });
@@ -172,7 +195,8 @@ document.querySelectorAll('.dicetrack').forEach(el => {
   el.addEventListener('keydown', e => {
     const x = e.key === 'Enter' || e.key === ' ' ? 0.5 : /^[1-9]$/.test(e.key) ? +e.key / 10 : e.key === '0' ? 1 : null;
     if (x === null) return;
-    e.preventDefault(); const P = makePath(what, side); pathAt(P, x); commitPath(P); settle();
+    e.preventDefault(); if (what !== 'all' && state.panelLocks[what]) return;
+    const P = makePath(what, side); pathAt(P, x); commitPath(P); settle();
   });
   place(0);
 });
@@ -184,6 +208,7 @@ document.addEventListener('pointerdown', e => {
   const kn = e.target.closest('.knob'); if (!kn) return;
   const i = +kn.id.slice(1), d = DEFS[i]; if (!d) return;
   e.preventDefault(); e.stopPropagation();
+  if (isLocked(d)) return;   // a locked knob stays
   if (!H.used && H.x > 0.01) { putState(H.P.base); liveShow(H.P); }
   H.used = true;
   const amt = 0.35 + 0.65 * (H.x > 0.05 ? H.x : 0.5);

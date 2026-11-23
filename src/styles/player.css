@@ -266,3 +266,48 @@ select{font-size:.8rem}
 /* side presets below the A and B keys; their menus open upward */
 .siderow{padding:2px 0 4px}
 .desk:not(.dev) .panel[data-panel="seq"] .pviz{min-height:72px}
+
+/* ===== eighth pass (2026-11-23) ===== */
+/* a side in focus: the other side's key and the MORPH block grey out (they still work: tap either to leave or switch) */
+body[data-sidefocus="A"] .letter.b,body[data-sidefocus="B"] .letter.a{color:var(--muted)!important;filter:grayscale(1);opacity:.55}
+.morph-slider.rest .mcap{color:var(--muted);background:var(--well);opacity:.75}
+/* selections and actions: actions are raised keys that press in; selections (tabs, pills, colourways) are flat segments
+   that light in yellow, so nothing that is merely "on" looks pressed */
+.tab,.pill,.scheme{box-shadow:none;background:var(--well);border:1.5px solid var(--k);margin:0 4px 4px 0}
+.tab.down,.pill.down,.scheme.down{transform:none}
+.tab[aria-selected="true"],.scheme[aria-pressed="true"]{background:var(--hold);color:var(--on-ink)}
+.pill span.on{background:var(--hold);color:var(--on-ink)}
+.vivid .tab[aria-selected="false"]{background:var(--well)}
+/* 3rd / 4th / 5th: equal boxes */
+#rowPill span{min-width:54px;justify-content:center}
+/* lock and link icons on the panels' knobs; section padlocks in the panel titles */
+body:not(.dev) .panel .kwrap .icons{display:flex}
+.panel .kwrap .icons{bottom:-5px}
+.panel .lock svg{width:13px;height:13px}
+.plock{margin-left:2px;opacity:.5}
+.plock[aria-pressed="true"]{opacity:1;color:var(--ink)}
+.panel.plocked .dbox{opacity:.35}
+.panel.plocked .dicetrack{cursor:default}
+/* the FX rack */
+.panel[data-panel="fx"]{position:relative}
+.rack{position:absolute;inset:0;z-index:6;background:var(--surface);border-radius:14px;padding:10px 12px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+.rack[hidden]{display:none}
+.rackhead{display:flex;align-items:center;justify-content:space-between}
+#rackRows{display:flex;flex-direction:column;gap:6px}
+.rrow{display:grid;grid-template-columns:96px minmax(0,1fr);gap:4px 8px;align-items:center;padding:6px 6px 2px;border-radius:12px;background:var(--well)}
+.rhead{display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.rname{width:92px;text-align:left;padding:4px 8px}
+.rname:disabled{opacity:1}
+.rrow .knobs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-flow:row;gap:2px;justify-items:center;max-width:none}
+.rrow .rmore{grid-column:1 / -1;grid-template-columns:repeat(4,minmax(0,1fr));padding-top:4px;border-top:1.5px solid var(--line)}
+.rrow .rmore[hidden]{display:none}
+.rack .knob{width:46px;height:46px}
+.rack .kab{display:none}
+.rack .kname{font-size:.56rem;letter-spacing:.04em}
+.rack .kval{font-size:.66rem}
+.rack .kwrap .icons{transform:translateX(-50%) scale(.72);bottom:-8px}
+.rack .pill{min-height:28px} .rack .pill span{padding:2px 9px;font-size:.66rem}
+/* desktop Seq: Walk / Swap and Edit stack at the bottom right, beside the knobs */
+.desk:not(.dev) .panel[data-panel="seq"] .knobs{padding-right:150px}
+.desk:not(.dev) .panel[data-panel="seq"] .pfoot{flex-direction:column;align-items:flex-end;gap:2px}
+.desk:not(.dev) .panel[data-panel="seq"] .pfoot .spacer{display:none}

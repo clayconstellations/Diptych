@@ -700,6 +700,51 @@ select{font-size:.8rem}
 /* side presets below the A and B keys; their menus open upward */
 .siderow{padding:2px 0 4px}
 .desk:not(.dev) .panel[data-panel="seq"] .pviz{min-height:72px}
+
+/* ===== eighth pass (2026-11-23) ===== */
+/* a side in focus: the other side's key and the MORPH block grey out (they still work: tap either to leave or switch) */
+body[data-sidefocus="A"] .letter.b,body[data-sidefocus="B"] .letter.a{color:var(--muted)!important;filter:grayscale(1);opacity:.55}
+.morph-slider.rest .mcap{color:var(--muted);background:var(--well);opacity:.75}
+/* selections and actions: actions are raised keys that press in; selections (tabs, pills, colourways) are flat segments
+   that light in yellow, so nothing that is merely "on" looks pressed */
+.tab,.pill,.scheme{box-shadow:none;background:var(--well);border:1.5px solid var(--k);margin:0 4px 4px 0}
+.tab.down,.pill.down,.scheme.down{transform:none}
+.tab[aria-selected="true"],.scheme[aria-pressed="true"]{background:var(--hold);color:var(--on-ink)}
+.pill span.on{background:var(--hold);color:var(--on-ink)}
+.vivid .tab[aria-selected="false"]{background:var(--well)}
+/* 3rd / 4th / 5th: equal boxes */
+#rowPill span{min-width:54px;justify-content:center}
+/* lock and link icons on the panels' knobs; section padlocks in the panel titles */
+body:not(.dev) .panel .kwrap .icons{display:flex}
+.panel .kwrap .icons{bottom:-5px}
+.panel .lock svg{width:13px;height:13px}
+.plock{margin-left:2px;opacity:.5}
+.plock[aria-pressed="true"]{opacity:1;color:var(--ink)}
+.panel.plocked .dbox{opacity:.35}
+.panel.plocked .dicetrack{cursor:default}
+/* the FX rack */
+.panel[data-panel="fx"]{position:relative}
+.rack{position:absolute;inset:0;z-index:6;background:var(--surface);border-radius:14px;padding:10px 12px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+.rack[hidden]{display:none}
+.rackhead{display:flex;align-items:center;justify-content:space-between}
+#rackRows{display:flex;flex-direction:column;gap:6px}
+.rrow{display:grid;grid-template-columns:96px minmax(0,1fr);gap:4px 8px;align-items:center;padding:6px 6px 2px;border-radius:12px;background:var(--well)}
+.rhead{display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.rname{width:92px;text-align:left;padding:4px 8px}
+.rname:disabled{opacity:1}
+.rrow .knobs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-flow:row;gap:2px;justify-items:center;max-width:none}
+.rrow .rmore{grid-column:1 / -1;grid-template-columns:repeat(4,minmax(0,1fr));padding-top:4px;border-top:1.5px solid var(--line)}
+.rrow .rmore[hidden]{display:none}
+.rack .knob{width:46px;height:46px}
+.rack .kab{display:none}
+.rack .kname{font-size:.56rem;letter-spacing:.04em}
+.rack .kval{font-size:.66rem}
+.rack .kwrap .icons{transform:translateX(-50%) scale(.72);bottom:-8px}
+.rack .pill{min-height:28px} .rack .pill span{padding:2px 9px;font-size:.66rem}
+/* desktop Seq: Walk / Swap and Edit stack at the bottom right, beside the knobs */
+.desk:not(.dev) .panel[data-panel="seq"] .knobs{padding-right:150px}
+.desk:not(.dev) .panel[data-panel="seq"] .pfoot{flex-direction:column;align-items:flex-end;gap:2px}
+.desk:not(.dev) .panel[data-panel="seq"] .pfoot .spacer{display:none}
 </style>
 </head>
 <body>
@@ -726,40 +771,42 @@ select{font-size:.8rem}
 </header>
 
 <nav class="tabs" role="tablist" aria-label="Sections">
-  <button type="button" class="key tab" role="tab" data-tab="synth" aria-selected="false">Synth</button><button type="button" class="key tab" role="tab" data-tab="amp" aria-selected="false">Amp</button><button type="button" class="key tab" role="tab" data-tab="filt" aria-selected="false">Filt</button><button type="button" class="key tab" role="tab" data-tab="fx" aria-selected="false">FX</button><button type="button" class="key tab" role="tab" data-tab="seq" aria-selected="false">Seq</button><button type="button" class="key tab" role="tab" data-tab="play" aria-selected="false">Play</button>
+  <button type="button" class="key tab" role="tab" data-tab="synth" aria-selected="false">Synth</button><button type="button" class="key tab" role="tab" data-tab="amp" aria-selected="false">Amp</button><button type="button" class="key tab" role="tab" data-tab="filt" aria-selected="false">Filt</button><button type="button" class="key tab" role="tab" data-tab="fx" aria-selected="false">FX</button><button type="button" class="key tab" role="tab" data-tab="seq" aria-selected="false">Seq</button><button type="button" class="key tab" role="tab" data-tab="play" aria-selected="false">Keys</button>
 </nav>
 <div class="panels" id="panels">
   <section class="panel" data-panel="synth" role="tabpanel" aria-label="Synth">
-    <div class="ptop"><div class="pctl"><h2 class="ph">Synth</h2></div><div class="dbox" data-scope="synth"></div></div>
+    <div class="ptop"><div class="pctl"><h2 class="ph">Synth<button type="button" class="lock plock" data-panellock="synth" aria-pressed="false"></button></h2></div><div class="dbox" data-scope="synth"></div></div>
     <div class="pviz"><canvas id="scope" aria-label="Wave display: the wave you hear now"></canvas></div>
     <div class="knobs" id="pk_synth"></div>
   </section>
   <section class="panel" data-panel="amp" role="tabpanel" aria-label="Amp">
-    <div class="ptop"><div class="pctl"><h2 class="ph">Amp</h2></div><div class="dbox" data-scope="amp"></div></div>
+    <div class="ptop"><div class="pctl"><h2 class="ph">Amp<button type="button" class="lock plock" data-panellock="amp" aria-pressed="false"></button></h2></div><div class="dbox" data-scope="amp"></div></div>
     <div class="pviz"><canvas id="envviz" aria-label="Amp envelope: side A, side B and what you hear now"></canvas></div>
     <div class="knobs" id="pk_amp"></div>
   </section>
   <section class="panel" data-panel="filt" role="tabpanel" aria-label="Filt">
-    <div class="ptop"><div class="pctl"><h2 class="ph">Filt</h2></div><div class="dbox" data-scope="filt"></div></div>
+    <div class="ptop"><div class="pctl"><h2 class="ph">Filt<button type="button" class="lock plock" data-panellock="filt" aria-pressed="false"></button></h2></div><div class="dbox" data-scope="filt"></div></div>
     <div class="pviz"><canvas id="filtviz" aria-label="Filter: the cutoff over a held note, side A, side B and what you hear now"></canvas></div>
     <div class="knobs" id="pk_filt"></div>
   </section>
   <section class="panel" data-panel="fx" role="tabpanel" aria-label="FX">
-    <div class="ptop"><div class="pctl"><h2 class="ph">FX</h2></div><div class="dbox" data-scope="fx"></div></div>
+    <div class="ptop"><div class="pctl"><h2 class="ph">FX<button type="button" class="lock plock" data-panellock="fx" aria-pressed="false"></button></h2></div><div class="dbox" data-scope="fx"></div></div>
     <div class="pviz"><canvas id="fxscope" aria-label="Effects shown on the wave you hear now"></canvas></div>
-    <div class="knobs" id="pk_fx"></div>
+    <div class="knobs" id="pk_fx"></div><div class="pfoot"><span class="spacer"></span><button type="button" class="key" id="fxEdit" aria-label="Edit the effects">Edit</button></div>
+    <div class="rack" id="fxRack" hidden><div class="rackhead"><h2 class="ph">FX rack</h2><button type="button" class="key" id="rackDone">Done</button></div><div id="rackRows"></div></div>
+  
   </section>
   <section class="panel" data-panel="seq" role="tabpanel" aria-label="Seq">
-    <div class="ptop"><div class="pctl"><h2 class="ph">Seq</h2><div class="pctl2" id="pSeqTop"></div></div><div class="dbox" data-scope="seq"></div></div>
+    <div class="ptop"><div class="pctl"><h2 class="ph">Seq<button type="button" class="lock plock" data-panellock="seq" aria-pressed="false"></button></h2></div><div class="dbox" data-scope="seq"></div></div>
     <div class="pviz"><div class="lanes">
         <span class="ln a">A</span><div class="lane"><canvas id="lnA" aria-label="Sequence A"></canvas></div>
         <span class="ln now">Now</span><div class="lane"><canvas id="lnL" aria-label="Sequence playing now"></canvas></div>
         <span class="ln b">B</span><div class="lane"><canvas id="lnB" aria-label="Sequence B"></canvas></div>
       </div></div>
-    <div class="knobs" id="pk_seq"></div><div class="pfoot"><span class="spacer"></span><button type="button" class="key" id="seqEdit" aria-label="Edit sequences">Edit</button></div>
+    <div class="knobs" id="pk_seq"></div><div class="pfoot" id="pSeqFoot"><span class="spacer"></span><button type="button" class="key" id="seqEdit" aria-label="Edit sequences">Edit</button></div>
   </section>
-  <section class="panel" data-panel="play" role="tabpanel" aria-label="Play">
-    <div class="ptop"><div class="pctl"><h2 class="ph">Play</h2><div class="pctl2"><button type="button" class="pill kbpill" id="kbPill" aria-label="Keyboard layout: piano, grid or hexagons"><span data-kb="piano" aria-label="Piano keys"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M9 4v16M15 4v16"/><path d="M7.5 4h3v9h-3zM13.5 4h3v9h-3z" fill="currentColor"/></svg></span><span data-kb="grid" aria-label="Grid"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/></svg></span><span data-kb="hex" aria-label="Hexagons"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5l7.4 4.25v8.5L12 20.5l-7.4-4.25v-8.5z"/></svg></span></button><span class="octbox"><button type="button" class="key" id="octDown" aria-label="Octave down">−</button><span class="oct" id="octLabel">C3</span><button type="button" class="key" id="octUp" aria-label="Octave up">+</button></span><button type="button" class="key" id="latch" aria-pressed="false">Latch</button></div></div></div>
+  <section class="panel" data-panel="play" role="tabpanel" aria-label="Keys">
+    <div class="ptop"><div class="pctl"><h2 class="ph">Keys</h2><div class="pctl2"><button type="button" class="pill kbpill" id="kbPill" aria-label="Keyboard layout: piano, grid or hexagons"><span data-kb="piano" aria-label="Piano keys"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M9 4v16M15 4v16"/><path d="M7.5 4h3v9h-3zM13.5 4h3v9h-3z" fill="currentColor"/></svg></span><span data-kb="grid" aria-label="Grid"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/></svg></span><span data-kb="hex" aria-label="Hexagons"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5l7.4 4.25v8.5L12 20.5l-7.4-4.25v-8.5z"/></svg></span></button><span class="octbox"><button type="button" class="key" id="octDown" aria-label="Octave down">−</button><span class="oct" id="octLabel">C3</span><button type="button" class="key" id="octUp" aria-label="Octave up">+</button></span><button type="button" class="key" id="latch" aria-pressed="false">Latch</button></div></div></div>
     <div class="pviz"><div class="keys" id="keys"></div></div>
     
   </section>
@@ -798,7 +845,8 @@ select{font-size:.8rem}
     <div class="edhead"><h2 id="setTitle">Settings</h2><button type="button" class="key" id="setDone">Done</button></div>
     <div class="setrow"><span class="lbl">Keys</span><button type="button" class="pill" id="monoPill" role="switch" aria-checked="false" aria-label="Voices: poly or mono"><span>Poly</span><span>Mono</span></button></div>
     <div class="setrow"><span class="lbl">Grid and hexagon notes</span><button type="button" class="pill" id="chromPill" role="switch" aria-checked="false" aria-label="Grid notes: in key or chromatic"><span>In key</span><span>Chromatic</span></button></div>
-    <div class="setrow"><span class="lbl">Grid and hexagon rows go up a</span><button type="button" class="pill" id="rowPill" aria-label="Interval between rows"><span>Third</span><span>Fourth</span><span>Fifth</span></button></div>
+    <div class="setrow"><span class="lbl">Grid and hexagon rows go up a</span><button type="button" class="pill" id="rowPill" aria-label="Interval between rows"><span>3rd</span><span>4th</span><span>5th</span></button></div>
+    <div class="setrow"><span class="lbl">Hexagon layout</span><button type="button" class="pill" id="hexPill" role="switch" aria-checked="false" aria-label="Hexagon layout: rows or harmonic table"><span>Rows</span><span>Harmonic table</span></button></div>
     <div class="setrow"><span class="lbl">Theme</span><button type="button" class="pill" id="themePill" aria-label="Theme"><span>Auto</span><span>Light</span><span>Dark</span></button></div>
     <div class="setrow"><span class="lbl">Background</span><button type="button" class="pill" id="bgPill" role="switch" aria-checked="false" aria-label="Background: subtle or vivid"><span>Subtle</span><span>Vivid</span></button></div>
     <div class="setrow"><span class="lbl">Colours</span><div class="schemes" id="schemes" role="group" aria-label="Colour scheme"></div></div>
@@ -2521,7 +2569,7 @@ try {
       if (saved.C) state.C[i] = clampC(+saved.C[k] || 0);
     });
     state.morph = clamp(+saved.morph || 0);
-    for (const k of ['locks', 'links', 'secLocks', 'linkMem']) if (saved[k] && typeof saved[k] === 'object') state[k] = saved[k];
+    for (const k of ['locks', 'links', 'secLocks', 'linkMem', 'panelLocks']) if (saved[k] && typeof saved[k] === 'object') state[k] = saved[k];
     state.mono = !!saved.mono;
     if (Array.isArray(saved.fxOn) && saved.fxOn.length === NFX) state.fxOn = saved.fxOn.map(Boolean);
     if (Array.isArray(saved.oscOn)) state.oscOn = OSC_KIND.map((_, s) => saved.oscOn[s] !== false);   // ver 3 added FM (a fifth oscillator)
@@ -2731,7 +2779,7 @@ const knobSVG = (d, i) => `<svg viewBox="0 0 80 80" aria-hidden="false">
 const groupsEl = document.getElementById('groups');
 const knobHTML = (d, i) => `<div class="kn${isBasic(d) ? '' : ' adv'}">
     <div class="kname">${d.label}</div>
-    <div class="kwrap"><div class="knob" id="k${i}">${knobSVG(d, i)}</div>${iconBtn(d.id, d.label, d.single)}</div>
+    <div class="kwrap"><div class="knob" id="k${i}">${knobSVG(d, i)}</div>${iconBtn(d.id, d.label, d.single || d.seq || d.pair)}</div>
     <div class="kval" id="v${i}"></div>
     <div class="kab"><span class="a" id="va${i}"></span><span class="b" id="vb${i}"></span></div>
   </div>`;
@@ -2884,9 +2932,19 @@ function updateKnob(i) {
 /* Latency (2026-11-11): the player's view only shows the knobs in the panels, so only those are redrawn when the morph
    or a whole patch changes (the developer view redraws every knob). Redrawing all of them on every move of the morph
    slider was most of the work on a phone. */
-let liveCache = null;
-const liveKnobs = () => (typeof devView !== 'undefined' && devView ? DEFS.map((_, i) => i)
-  : liveCache || (liveCache = DEFS.map((d, i) => i).filter(i => !DEFS[i].opts && $('k' + i) && $('k' + i).closest('#panels'))));
+const liveCache = {};
+/* which knobs are on screen: on desktop every panel's, on a phone the current tab's; the FX rack's only while it is open */
+function liveKnobs() {
+  if (typeof devView !== 'undefined' && devView) return DEFS.map((_, i) => i);
+  const desk = document.body.classList.contains('desk'), tab = typeof curTab === 'undefined' ? 'synth' : curTab, rack = typeof rackOpen !== 'undefined' && rackOpen;
+  const key = (desk ? 'desk' : tab) + (rack ? '+rack' : '');
+  return liveCache[key] || (liveCache[key] = DEFS.map((d, i) => i).filter(i => {
+    if (DEFS[i].opts) return false;
+    const el = $('k' + i), p = el && el.closest('.panel'); if (!p) return false;
+    if (el.closest('.rack') && !rack) return false;
+    return desk || p.dataset.panel === tab;
+  }));
+}
 function updateKnobs() { for (const i of liveKnobs()) updateKnob(i); }
 function refreshAll() { updateKnobs(); updateMorphUI(); }
 function setParam(side, i, x) {
@@ -3002,7 +3060,7 @@ DEFS.forEach((d, i) => { if (!d.opts) bindKnob(i); });
    sequencer's knobs move into the panels (Synth, Amp, Filt, FX, Seq), and the Sound and Sequence cards go away. */
 {
   const put = (box, keys) => keys.forEach(k => $(box).appendChild($('k' + IX[k]).closest('.kn')));
-  put('pk_synth', ['mbright', 'wpos']); put('pk_amp', ['menv']); put('pk_filt', ['cutoff', 'reso', 'envamt']); put('pk_fx', ['mfx', 'mwet']); put('pk_seq', ['pattern', 'sqdens', 'sqspeed', 'sqoct']);
+  put('pk_synth', ['mbright', 'wpos']); put('pk_amp', ['menv']); put('pk_filt', ['cutoff', 'reso', 'envamt']); put('pk_fx', ['mfx', 'mwet']); put('pk_seq', ['pattern', 'sqdens', 'sqoct', 'sqspeed']); $('k' + IX.sqspeed).closest('.kn').style.display = 'none';   // Speed is fixed at 1x and its knob hidden (2026-11-23)
   $('patKnob').remove();
   for (const g of ['Sound', 'Sequence']) { if (sections[g]) { sections[g].remove(); delete sections[g]; } }
 }
@@ -3569,7 +3627,8 @@ function rvApart(d, side, other) {
 }
 // A parameter is locked if its own padlock is on or its whole section is locked.
 // Section locks sit on top of the individual ones, so unlocking a section brings back each knob's own setting.
-const isLocked = d => !!state.locks[d.id] || !!state.secLocks[d.group];
+// Position's padlock (the Synth panel's knob) locks the two table positions it stands for
+const isLocked = d => !!state.locks[d.id] || !!state.secLocks[d.group] || (d.slot === 0 && (d.key === 'posA' || d.key === 'posB') && !!state.locks.wpos);
 const inGroup = (d, g) => !g || d.group === g;
 const isFree = i => !isLocked(DEFS[i]) && !state.links[DEFS[i].id];
 /* OTT band gains: within ±3 dB, and never all boosting or all cutting on one side. A side where OTT is off
@@ -4035,6 +4094,7 @@ function updateFxUI() {
     b.setAttribute('aria-pressed', on); b.textContent = on ? 'On' : 'Off';
     b.closest('.group').classList.toggle('fxoff', !on);
   });
+  if (typeof updateRack === 'function') updateRack();
 }
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-fx], [data-osc]'); if (!b) return;
@@ -4264,6 +4324,7 @@ function setTab(t) {
   document.querySelectorAll('.panel').forEach(p => p.classList.toggle('on', p.dataset.panel === t));
   try { localStorage.setItem('diptych-tab', t); } catch (e) {}
   if (typeof buildKeys === 'function' && t === 'play') requestAnimationFrame(buildKeys);
+  if (window.__booted) updateKnobs();   // only the current tab's knobs are kept drawn on a phone
   drawWaves();
 }
 document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => setTab(b.dataset.tab)));
@@ -4383,20 +4444,37 @@ function playDot(g, x, y, col) { g.fillStyle = col; g.beginPath(); g.arc(x, y, 5
 const AMP_KEYS = new Set(['aatk', 'adec', 'asus', 'arel', 'menv']);
 const FILT_KEYS = new Set(['cutoff', 'reso', 'mode', 'envamt', 'keytrack', 'fatk', 'fdec', 'fsus', 'frel']);
 const isFxD = d => d.kind === 'fx' || d.key === 'mfx' || d.key === 'mwet', isSeqD = d => !!d.seq || d.group === 'Sequencer';
+/* Section padlocks (2026-11-23): each panel's padlock keeps its part out of every roll: its own dice rest (dimmed) and
+   the Everything die passes over it. Kept with the patch (state.panelLocks). */
+if (!state.panelLocks || typeof state.panelLocks !== 'object') state.panelLocks = {};
+const panelOf = d => (isSeqD(d) ? 'seq' : AMP_KEYS.has(d.key) ? 'amp' : FILT_KEYS.has(d.key) ? 'filt' : isFxD(d) ? 'fx' : 'synth');
 const PART = {
   amp: d => AMP_KEYS.has(d.key),
   filt: d => FILT_KEYS.has(d.key),
   fx: isFxD,
   synth: d => !AMP_KEYS.has(d.key) && !FILT_KEYS.has(d.key) && !isFxD(d) && !isSeqD(d),
-  all: d => !isSeqD(d),
+  all: d => !isSeqD(d) && !state.panelLocks[panelOf(d)],
 };
+function updatePanelLocks() {
+  document.querySelectorAll('[data-panellock]').forEach(b => {
+    const k = b.dataset.panellock, on = !!state.panelLocks[k];
+    b.setAttribute('aria-pressed', on); b.innerHTML = lockIcon(on);
+    b.setAttribute('aria-label', `${on ? 'Unlock' : 'Lock'} this section for the dice`);
+    b.closest('.panel').classList.toggle('plocked', on);
+  });
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-panellock]'); if (!b) return; const k = b.dataset.panellock; state.panelLocks[k] = !state.panelLocks[k]; updatePanelLocks(); save(); });
+updatePanelLocks();
 function rollPart(part, side, s) {
   const amt = 0.35 + 0.65 * s, inPart = PART[part];
   const sides = side === 'M' ? ['A', 'B'] : [side];
   const old = { A: state.A.slice(), B: state.B.slice(), C: state.C.slice(), t: tables.map(t => ({ A: t.A, B: t.B })), smp: { ...state.smp } };
   if (sides.length === 2) randomizeAll(); else randomizeSide(sides[0]);
   DEFS.forEach((d, i) => { if (!inPart(d)) { state.A[i] = old.A[i]; state.B[i] = old.B[i]; state.C[i] = old.C[i]; } });
-  if (part !== 'synth' && part !== 'all') { tables.forEach((t, k) => { t.A = old.t[k].A; t.B = old.t[k].B; }); state.smp = old.smp; }
+  // the FX dice also move the two FX macros (they stay at 50% on a plain roll, so the dice seemed not to reach them)
+  if (part === 'fx' || (part === 'all' && !state.panelLocks.fx)) for (const k of sides) for (const key of ['mfx', 'mwet']) { const i = IX[key]; if (isFree(i)) state[k][i] = 0.2 + rnd() * 0.6; }
+  const wavesToo = part === 'synth' || (part === 'all' && !state.panelLocks.synth);
+  if (!wavesToo) { tables.forEach((t, k) => { t.A = old.t[k].A; t.B = old.t[k].B; }); state.smp = old.smp; }
   if (amt < 0.98) {
     for (const k of sides) {
       DEFS.forEach((d, i) => {
@@ -4404,15 +4482,15 @@ function rollPart(part, side, s) {
         if (o === n || !inPart(d)) return;
         state[k][i] = d.opts ? (rnd() < amt ? n : o) : quant(d, o + (n - o) * amt);
       });
-      if (part === 'synth' || part === 'all') { tables.forEach((t, j) => { if (rnd() >= amt) t[k] = old.t[j][k]; }); if (rnd() >= amt) state.smp[k] = old.smp[k]; }
+      if (wavesToo) { tables.forEach((t, j) => { if (rnd() >= amt) t[k] = old.t[j][k]; }); if (rnd() >= amt) state.smp[k] = old.smp[k]; }
     }
     if (sides.length === 2) state.C = state.C.map((c, i) => old.C[i] + (c - old.C[i]) * amt);
   }
-  for (const k of sides) { if (part === 'synth' || part === 'all') levelMatch(k); if (part === 'synth' || part === 'all' || part === 'filt') { sineGuard(k); loudnessGuard(k); } }
+  for (const k of sides) { if (wavesToo) levelMatch(k); if (wavesToo || (part === 'filt') || (part === 'all' && !state.panelLocks.filt)) { sineGuard(k); loudnessGuard(k); } }
 }
 const rollSound = (side, s) => rollPart('synth', side, s);
 // the header's die: everything, both sides (the sound by parts at this strength, and the sequences)
-const rollAll = s => { rollPart('all', 'M', s); rollSeq('M', s); };
+const rollAll = s => { rollPart('all', 'M', s); if (!state.panelLocks.seq) rollSeq('M', s); };
 /* Sequence: a full roll at the far end (as before: new rate, generator, rhythm, density, speed and octave; in Morph also a
    new shared scale). Below that the pattern keeps its rate and length, and each note is re-rolled with chance amt (a new
    melody in the scale), with rests and velocities shuffled in proportion. */
@@ -4446,10 +4524,15 @@ function makePath(what, side) {
   const base = keepState(), undo = snapshot();
   if (what === 'all') rollAll(1); else if (what === 'seq') rollSeq(side, 1); else rollPart(what, side, 1);
   const full = keepState();
+  // locked sequencer knobs (Density, Octave) and a locked Seq section stay where they are
+  for (const k of ['A', 'B']) for (const key of ['sqdens', 'sqspeed', 'sqoct']) if (state.locks[key]) full[k][IX[key]] = base[k][IX[key]];
+  const seqHeld = what === 'all' && state.panelLocks.seq;
+  if (seqHeld) full.seq = JSON.parse(JSON.stringify(base.seq));
   putState(base);
   let part = null;   // sequences below the far end: a new melody in the same rhythm grid, step by step
   if (what === 'seq' || what === 'all') {
-    rollSeq(side === 'M' || what === 'all' ? 'M' : side, 0.6); part = JSON.parse(JSON.stringify(state.seq)); putState(base);
+    if (!seqHeld) rollSeq(side === 'M' || what === 'all' ? 'M' : side, 0.6);
+    part = JSON.parse(JSON.stringify(state.seq)); putState(base);
   }
   const u = DEFS.map(() => rnd()), ut = tables.map(() => ({ A: rnd(), B: rnd() })), us = rnd();
   const useq = { A: state.seq.A.steps.map(() => rnd()), B: state.seq.B.steps.map(() => rnd()) };
@@ -4521,7 +4604,8 @@ document.querySelectorAll('.dicetrack').forEach(el => {
     });
   };
   el.addEventListener('pointerdown', e => {
-    e.preventDefault(); pid = e.pointerId; el.setPointerCapture(pid); el.classList.add('dragging');
+    e.preventDefault(); if (what !== 'all' && state.panelLocks[what]) return;   // a locked section's dice rest
+    pid = e.pointerId; el.setPointerCapture(pid); el.classList.add('dragging');
     dieHeld = { what, side, x: 0, P: makePath(what, side), used: false };
     const x = fromY(e.clientY, e.clientX); place(x); live(x);
   });
@@ -4540,7 +4624,8 @@ document.querySelectorAll('.dicetrack').forEach(el => {
   el.addEventListener('keydown', e => {
     const x = e.key === 'Enter' || e.key === ' ' ? 0.5 : /^[1-9]$/.test(e.key) ? +e.key / 10 : e.key === '0' ? 1 : null;
     if (x === null) return;
-    e.preventDefault(); const P = makePath(what, side); pathAt(P, x); commitPath(P); settle();
+    e.preventDefault(); if (what !== 'all' && state.panelLocks[what]) return;
+    const P = makePath(what, side); pathAt(P, x); commitPath(P); settle();
   });
   place(0);
 });
@@ -4552,6 +4637,7 @@ document.addEventListener('pointerdown', e => {
   const kn = e.target.closest('.knob'); if (!kn) return;
   const i = +kn.id.slice(1), d = DEFS[i]; if (!d) return;
   e.preventDefault(); e.stopPropagation();
+  if (isLocked(d)) return;   // a locked knob stays
   if (!H.used && H.x > 0.01) { putState(H.P.base); liveShow(H.P); }
   H.used = true;
   const amt = 0.35 + 0.65 * (H.x > 0.05 ? H.x : 0.5);
@@ -4572,13 +4658,13 @@ document.addEventListener('pointerdown', e => {
    morph passes between them) and Mono / Poly for the keys. Per browser
    conveniences, kept in localStorage, not part of the patch.
    ===================================================================== */
-const SCHEMES = [   // [name, A light, B light, A dark, B dark] (2026-11-11, sixth pass)
-  ['Twin Flame', '#0092B5', '#E62E9C', '#3FD7F2', '#FF5CC2'],   // Ultra's old cyan-blue, and a magenta pink
-  ['Ultra', '#0047AB', '#B0102E', '#4C7DFF', '#F23B57'],        // cobalt, and ruby
-  ['Iris', '#108A55', '#5A3FC4', '#3FD68F', '#9A86FF'],         // leaf green, and iris violet (sides swapped)
+const SCHEMES = [   // [name, A light, B light, A dark, B dark] (2026-11-23)
+  ['Twin Flame', '#0092B5', '#E62E9C', '#3FD7F2', '#FF5CC2'],   // cyan-blue, and a magenta pink
+  ['Ultra', '#2B2FE0', '#B0102E', '#6A72FF', '#F23B57'],        // ultramarine, and ruby
+  ['Iris', '#108A55', '#5A3FC4', '#3FD68F', '#9A86FF'],         // leaf green, and iris violet
   ['Seaglass', '#2DB58C', '#E8787A', '#7FF0C4', '#FF9E9B'],     // seafoam, and a coral-tinted pink
-  ['Aurora', '#3E8F12', '#0B1745', '#7CC43A', '#2A3F94'],       // a warmer, darker aurora green, and a deeper night sky (sides swapped)
-  ['Volcano', '#1B1C1F', '#F01E10', '#4A4C52', '#FF3B2B'],      // ember black (cooler, darker), and a vivid lava red
+  ['Lumanautics', '#F26A0F', '#97A1AE', '#FF8A2A', '#D5DBE5'],  // orange, and light grey
+  ['Volcano', '#1B1C1F', '#F01E10', '#4A4C52', '#FF3B2B'],      // ember black, and a vivid lava red
 ];
 /* the cog, drawn evenly: eight identical teeth around a ring, and the hole in the middle */
 const COG = (() => {
@@ -4631,8 +4717,9 @@ document.addEventListener('pointerdown', e => {
 
 /* the grid and hexagon layouts (ui/keyboard.js): in key (the scale's notes only) or chromatic (all twelve, the notes in
    the key lit more brightly), and the interval between rows: a third, a fourth (the usual choice) or a fifth */
-let kbChrom = pref('diptych-chrom', '0') === '1', kbRow = Math.max(0, Math.min(2, +pref('diptych-row', '1')));
-const syncGridPrefs = () => { setPill($('chromPill'), kbChrom ? 1 : 0); setPill($('rowPill'), kbRow); };
+let kbHarm = pref('diptych-harm', '0') === '1', kbChrom = pref('diptych-chrom', '0') === '1', kbRow = Math.max(0, Math.min(2, +pref('diptych-row', '1')));
+const syncGridPrefs = () => { setPill($('chromPill'), kbChrom ? 1 : 0); setPill($('rowPill'), kbRow); setPill($('hexPill'), kbHarm ? 1 : 0); };
+onPill($('hexPill'), k => { kbHarm = k === 1; setPref('diptych-harm', kbHarm ? '1' : '0'); syncGridPrefs(); if (typeof buildKeys === 'function') buildKeys(); });
 onPill($('chromPill'), k => { kbChrom = k === 1; setPref('diptych-chrom', kbChrom ? '1' : '0'); syncGridPrefs(); if (typeof buildKeys === 'function') buildKeys(); });
 onPill($('rowPill'), k => { kbRow = k; setPref('diptych-row', String(kbRow)); syncGridPrefs(); if (typeof buildKeys === 'function') buildKeys(); });
 syncGridPrefs();
@@ -4668,7 +4755,7 @@ function askName(title, def, ok) {
 /* ---------- global ---------- */
 function patchNow() {
   return { ver: STORE_VER, ids: DEFS.map(d => d.id), A: state.A.slice(), B: state.B.slice(), C: state.C.slice(), morph: savedMorph(),
-    locks: { ...state.locks }, secLocks: { ...state.secLocks }, links: { ...state.links }, linkMem: JSON.parse(JSON.stringify(state.linkMem)),
+    locks: { ...state.locks }, secLocks: { ...state.secLocks }, panelLocks: { ...state.panelLocks }, links: { ...state.links }, linkMem: JSON.parse(JSON.stringify(state.linkMem)),
     oscOn: state.oscOn.slice(), fxOn: state.fxOn.slice(), smp: JSON.parse(JSON.stringify(state.smp)), seq: JSON.parse(JSON.stringify(state.seq)),
     bpm: state.bpm, walk: state.walk, sideNames: { ...state.sideNames },
     tables: tables.map(t => ({ A: { name: t.A.name, frames: t.A.frames.map(enc) }, B: { name: t.B.name, frames: t.B.frames.map(enc) } })) };
@@ -4677,7 +4764,8 @@ function loadPreset(k) {
   const p = readList(PRE_KEY)[k]; if (!p) return;
   bulk(() => {
     p.ids.forEach((id, j) => { const i = IX[id]; if (i === undefined) return; state.A[i] = clamp(+p.A[j]); state.B[i] = clamp(+p.B[j]); state.C[i] = clampC(+p.C[j] || 0); });
-    for (const key of ['locks', 'secLocks', 'links', 'linkMem']) if (p[key]) state[key] = JSON.parse(JSON.stringify(p[key]));
+    for (const key of ['locks', 'secLocks', 'links', 'linkMem', 'panelLocks']) if (p[key]) state[key] = JSON.parse(JSON.stringify(p[key]));
+    updatePanelLocks();
     if (Array.isArray(p.oscOn)) state.oscOn = OSC_KIND.map((_, s) => p.oscOn[s] !== false);
     if (Array.isArray(p.fxOn)) state.fxOn = p.fxOn.map(Boolean);
     if (p.smp) state.smp = JSON.parse(JSON.stringify(p.smp));
@@ -4724,13 +4812,38 @@ function sideNow(k) {
   const vals = {}; sideKeys().forEach(i => { vals[DEFS[i].id] = state[k][i]; });
   return { vals, pos: state[k][IX.wpos], table: { name: tables[0][k].name, frames: tables[0][k].frames.map(enc) }, smp: state.smp[k] ? { ...state.smp[k] } : null };
 }
+/* Ten built-in side presets (2026-11-23), written in real units over a plain base (one wavetable, every effect off,
+   the macros at 50%); the wavetable is one of the built-in tables. They can't be deleted. Loading one level-matches
+   it like a random roll. */
+const SIDE_BASE = { 'o1.olevel': 0.8, 'o1.wave': 0, 'o1.unison': 0, 'o1.opan': 0, 'o1.byp': 0, 'o2.olevel': 0, 'o3.olevel': 0, 'o4.olevel': 0, 'o5.olevel': 0,
+  harm: 1, glide: 0, vdepth: 0, cutoff: 3000, reso: 0.2, mode: 0, envamt: 0.3, keytrack: 0.5, fatk: 0.003, fdec: 0.5, fsus: 0.3, frel: 0.4,
+  aatk: 0.005, adec: 0.7, asus: 0.6, arel: 0.35, menv: 0.5, mbright: 0.5, mfx: 0.5, mwet: 0.5,
+  dmix: 0, fmix: 0, mmix: 0, dlmix: 0, rvmix: 0, lwow: 0, lflut: 0, lchar: 0, lnmix: 0, ldrop: 0, lcodec: 0, ottdepth: 0, ottgl: 0, ottgm: 0, ottgh: 0, ottout: 0 };
+const SIDE_FACTORY = [
+  ['Glass Pluck', 'Harmonic stack', 0.35, { cutoff: 2200, reso: 0.3, envamt: 0.6, fdec: 0.25, fsus: 0.1, menv: 0.12, dltime: 7, dlfb: 0.45, dlmix: 0.25, rvmix: 0.2, rvsize: 0.6, rvdecay: 2.5 }],
+  ['Warm Pad', 'Vowel formants', 0.3, { cutoff: 900, envamt: 0.2, fatk: 0.8, menv: 0.9, 'o1.unison': 0.6, mtype: 0, mrate: 0.3, mdepth: 0.5, mmix: 0.5, rvmix: 0.4, rvsize: 0.8, rvdecay: 5 }],
+  ['Round Bass', 'Basic shapes', 0.75, { cutoff: 300, reso: 0.35, envamt: 0.45, fdec: 0.3, fsus: 0.2, keytrack: 0.3, menv: 0.3, drive: 0.4, dshape: 0.1, dmix: 0.5 }],
+  ['Acid Line', 'Basic shapes', 0.66, { cutoff: 400, reso: 0.8, envamt: 0.7, fdec: 0.18, fsus: 0.05, menv: 0.2, glide: 0.06, drive: 0.5, dshape: 0.3, dmix: 0.4 }],
+  ['Hollow Organ', 'Pulse width', 0, { cutoff: 3000, reso: 0.1, envamt: 0, aatk: 0.005, adec: 0.4, asus: 0.9, arel: 0.15, menv: 0.55, mtype: 1, mrate: 0.3, mdepth: 0.6, mfb: 0.4, mmix: 0.45 }],
+  ['Shimmer Bell', 'Sync sweep', 0.6, { cutoff: 6000, envamt: 0.2, fdec: 1.2, menv: 0.35, rvmix: 0.5, rvsize: 0.9, rvdecay: 8, rvdamp: 0.3, dltime: 8, dlfb: 0.4, dlmix: 0.2 }],
+  ['Tape Keys', 'Basic shapes', 0.33, { cutoff: 1800, envamt: 0.35, menv: 0.3, lwow: 0.35, lflut: 0.3, lchar: 0.5, lnoise: 0.2, lnmix: 0.12, rvmix: 0.15 }],
+  ['Vowel Lead', 'Vowel formants', 0.7, { cutoff: 4000, envamt: 0.25, menv: 0.5, vdepth: 0.25, vfade: 0.4, vrate: 5.5, fvowel: 0.3, freso: 0.6, fmix: 0.6, dltime: 5, dlfb: 0.35, dlmix: 0.2 }],
+  ['Crushed Square', 'Pulse width', 0.5, { cutoff: 5000, envamt: 0.1, menv: 0.4, drive: 0.8, dshape: 0.7, dmix: 0.9, lcodec: 0.4, ottdepth: 0.5, otttime: 0.6 }],
+  ['Night Drone', 'Harmonic stack', 0.9, { cutoff: 500, reso: 0.5, mode: 0.5, envamt: 0.3, fatk: 2, fdec: 4, fsus: 0.7, menv: 1, 'o1.unison': 0.9, mtype: 0.5, mrate: 0.08, mdepth: 0.7, mfb: 0.5, mmix: 0.5, rvmix: 0.6, rvsize: 0.9, rvdecay: 12 }],
+].map(([name, preset, pos, over]) => {
+  const vals = {};
+  for (const [id, v] of Object.entries({ ...SIDE_BASE, ...over })) { const i = IX[id]; if (i !== undefined) vals[id] = quant(DEFS[i], clamp(norm(DEFS[i], v))); }
+  return { name, factory: true, preset, pos, vals };
+});
+const sidePool = () => [...SIDE_FACTORY, ...readList(SIDE_KEY)];
 function loadSide(k, j) {
-  const p = readList(SIDE_KEY)[j]; if (!p) return;
+  const p = sidePool()[j]; if (!p) return;
   bulk(() => {
     for (const [id, v] of Object.entries(p.vals || {})) { const i = IX[id]; if (i === undefined || DEFS[i].single || isLinked(i)) continue; state[k][i] = clamp(+v); }
     if (typeof p.pos === 'number') { const x = clamp(p.pos), q = oi(0, k === 'A' ? 'posA' : 'posB'); state.A[q] = state.B[q] = x; }
-    const t = decTable(p.table); if (t) tables[0][k] = t;
+    const t = p.preset ? makeTable(p.preset) : decTable(p.table); if (t) tables[0][k] = t;
     if (p.smp && okRef(p.smp)) state.smp[k] = { ...p.smp };
+    if (p.factory) { analyzeTable(0, k); levelMatch(k); }
     state.sideNames[k] = p.name;
   });
   presetLabels();
@@ -4742,8 +4855,9 @@ function saveSide(k, name) {
 }
 document.querySelectorAll('[data-spre]').forEach(b => b.addEventListener('click', () => {
   if (menuOpen && menuOpen.anchor === b) { closeMenu(); return; }
-  const k = b.dataset.spre, list = readList(SIDE_KEY), cur = state.sideNames[k];
-  const items = list.length ? list.map((p, j) => ({ label: p.name, j, on: p.name === cur })) : [{ head: 'No side presets yet' }];
+  const k = b.dataset.spre, list = readList(SIDE_KEY), cur = state.sideNames[k], nf = SIDE_FACTORY.length;
+  const items = [{ head: 'Built in' }, ...SIDE_FACTORY.map((p, j) => ({ label: p.name, j, on: p.name === cur }))];
+  if (list.length) items.push({ sep: true }, { head: 'Yours' }, ...list.map((p, j) => ({ label: p.name, j: nf + j, on: p.name === cur })));
   items.push({ sep: true }, { label: `Save side ${k} as…`, act: 'saveas', cls: 'act' });
   if (cur && list.some(p => p.name === cur)) items.push({ label: `Delete "${cur}"`, act: 'del', cls: 'act' });
   openMenu(b, items, it => {
@@ -4822,6 +4936,39 @@ onPill($('viewPill'), k => setView(k === 1));
 document.body.classList.toggle('full', fullView && devView);
 setPill($('viewPill'), fullView ? 1 : 0);
 /* =====================================================================
+   FX RACK (2026-11-23): more control over the effects without crowding the
+   FX panel. The panel keeps its two macros; Edit opens a rack over it with a
+   row for each of the seven effects: its name, an On / Off pill, and its mix
+   and one or two most characterful knobs. Tapping an effect's name opens the
+   rest of that effect's knobs under its row. The knobs are the real ones
+   (moved here from the developer sections; the developer view keeps them
+   there and has no rack). The FX dice still roll everything.
+   ===================================================================== */
+var rackOpen = false;
+const RACK_KEYS = { drive: ['dmix', 'drive', 'dshape'], formant: ['fmix', 'fvowel', 'freso'], mod: ['mmix', 'mtype', 'mrate'], delay: ['dlmix', 'dltime', 'dlfb'],
+  reverb: ['rvmix', 'rvsize', 'rvdecay'], lofi: ['lchar', 'lwow', 'lnmix'], ott: ['ottdepth', 'otttime'] };
+function updateRack() { document.querySelectorAll('[data-rackfx]').forEach(p => setPill(p, state.fxOn[+p.dataset.rackfx] ? 0 : 1)); }
+if (!devView) {
+  const rack = $('fxRack'), rows = $('rackRows');
+  FX_KIND.forEach((eng, s) => {
+    const row = document.createElement('div'); row.className = 'rrow'; row.dataset.eng = eng;
+    row.innerHTML = `<div class="rhead"><button type="button" class="key rname" aria-expanded="false">${FX_NAMES[s]}</button><button type="button" class="pill" id="rackFx${s}" data-rackfx="${s}" role="switch" aria-label="${FX_NAMES[s]} on or off"><span>On</span><span>Off</span></button></div><div class="knobs rknobs"></div><div class="knobs rmore" hidden></div>`;
+    rows.appendChild(row);
+    const main = row.querySelector('.rknobs'), more = row.querySelector('.rmore');
+    DEFS.forEach((d, i) => { if (d.kind !== 'fx' || d.slot !== s || d.opts) return; const kn = $('k' + i).closest('.kn'); kn.classList.remove('adv'); (RACK_KEYS[eng].includes(d.key) ? main : more).appendChild(kn); });
+    RACK_KEYS[eng].forEach(k => main.appendChild($('k' + IX[k]).closest('.kn')));   // in the listed order
+    const name = row.querySelector('.rname');
+    if (!more.children.length) name.disabled = true;
+    name.addEventListener('click', () => { more.hidden = !more.hidden; name.setAttribute('aria-expanded', String(!more.hidden)); row.classList.toggle('open', !more.hidden); for (const k of Object.keys(liveCache)) delete liveCache[k]; updateKnobs(); });
+    onPill(row.querySelector('.pill'), k => { state.fxOn[s] = k === 0; if (ready) send({ type:'bypass', i: s, on: state.fxOn[s] }); updateRack(); drawWaves(); save(); });
+  });
+  const setRack = on => { rackOpen = on; rack.hidden = !on; if (on) { updateRack(); updateKnobs(); $('rackDone').focus({ preventScroll: true }); } else $('fxEdit').focus({ preventScroll: true }); };
+  $('fxEdit').addEventListener('click', () => setRack(true));
+  $('rackDone').addEventListener('click', () => setRack(false));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && rackOpen) setRack(false); });
+  updateRack();
+} else { $('fxEdit').hidden = true; }
+/* =====================================================================
    LAYOUT
    Phones and narrow windows: sections stacked, the page scrolls, the
    bottom panel stays in view. Wide landscape windows (desktop, plugin
@@ -4839,6 +4986,7 @@ function applyLayout() {
   app.style.zoom = desk ? Math.min(innerWidth / dw, innerHeight / dh) : '';
   document.documentElement.style.setProperty('--kbh', $('kb').getBoundingClientRect().height + 'px');   // the editors leave the bottom panel visible
   document.documentElement.style.setProperty('--toph', document.querySelector('.top').getBoundingClientRect().bottom + 'px');   // and the header (2026-11-11)
+  if (window.__booted) updateKnobs();
   drawWaves();
 }
 let layoutTimer = null;
@@ -4872,6 +5020,9 @@ let hexStep = 1;   // a third, a fourth, a fifth: in scale steps (in key) or sem
    Wicki-Hayden layout) and up-right is the row interval */
 function gridNote(right, up, hex) {
   const root = keyRoot(), sc = keyScale(), n = sc.length, pcs = new Set(sc.map(x => (x + root) % 12));
+  if (hex && kbHarm) {   // the harmonic table: a major third to the right, a fifth up-right, so a minor third up-left; any three neighbours make a triad
+    const off = root + right * 4 + up * 7, pc = ((off % 12) + 12) % 12; return { off, inKey: pcs.has(pc), isRoot: pc === root };
+  }
   if (!kbChrom) { const d = right + up * ROW_STEPS[kbRow]; return { off: root + sc[((d % n) + n) % n] + 12 * Math.floor(d / n), inKey: true, isRoot: ((d % n) + n) % n === 0 }; }
   const semis = right * (hex ? hexStep : 1) + up * ROW_SEMIS[kbRow], off = root + semis, pc = ((off % 12) + 12) % 12;
   return { off, inKey: pcs.has(pc), isRoot: pc === root };
@@ -4902,7 +5053,7 @@ function buildKeys() {
   } else {   // hexagons, pointed at the top, each row shifted half a cell from the one below
     let w = cell * 1.05;
     hexStep = 1;
-    if (kbChrom && kbRow === 2) { const fit = (W - 4) / 7.5; if (fit >= 40) { w = Math.min(w, fit); hexStep = 2; } }
+    if (kbChrom && kbRow === 2 && !kbHarm) { const fit = (W - 4) / 7.5; if (fit >= 40) { w = Math.min(w, fit); hexStep = 2; } }
     const h = w * 1.1547, dy = h * 0.75, cols = Math.max(4, Math.floor((W - w / 2) / w)), rows = Math.max(3, Math.floor((H - h) / dy) + 1);
     const ox = (W - (cols * w + w / 2)) / 2, oy = (H - ((rows - 1) * dy + h)) / 2;
     for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
@@ -5149,7 +5300,7 @@ function assignThresholds(list) {
 let seqCache = null;
 function buildSeq() {
   if (seqCache) return seqCache;
-  const A = state.seq.A, B = state.seq.B, fA = SPEED[seqSetting('A', 'sqspeed')], fB = SPEED[seqSetting('B', 'sqspeed')];
+  const A = state.seq.A, B = state.seq.B, fA = 1, fB = 1;   // Speed is gone from the player's view and stays at 1x (2026-11-23); the parameter remains so patches load
   const dA = stepPos(A).total * fA, dB = stepPos(B).total * fB;
   let loop = dA / gcd(dA, dB) * dB;
   if (loop > 48 * 4 * 64) loop = Math.max(dA, dB);
@@ -5178,7 +5329,7 @@ function seqChanged() { seqCache = null; sendSeq(); drawLanes(); if (sq.classLis
    The Seq panel's top-left holds Scale (built in editor.js) and the Walk / Swap pill; its lanes run the full width; Edit
    sits bottom right. The keyboard moved to the Play panel; the bottom panel holds only the morph row. */
 let panel = 'seq', seqPlaying = false, seqPos = null, seqLoop = 1;
-$('pSeqTop').insertAdjacentHTML('beforeend', `<button type="button" class="pill" id="walkPill" role="switch" aria-checked="false" aria-label="How differing notes morph: walk or swap"><span>Walk</span><span>Swap</span></button>`);
+$('pSeqFoot').insertAdjacentHTML('afterbegin', `<button type="button" class="pill" id="walkPill" role="switch" aria-checked="false" aria-label="How differing notes morph: walk or swap"><span>Walk</span><span>Swap</span></button>`);   // bottom row, opposite Edit
 const ICON_PLAY = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M4.5 2.8v10.4L13 8z" fill="currentColor"/></svg>';
 const ICON_STOP = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><rect x="3.5" y="3.5" width="9" height="9" rx="1.2" fill="currentColor"/></svg>';
 function setPlaying(on) {
@@ -5426,7 +5577,7 @@ function shapeRandom(s) {
 function randSpeedOct(q) {
   const k = sideOf(q); if (!k) return;
   const r = RATES[q.rate][1] || 18, x = Math.random();   // Mixed counts as fairly quick
-  state[k][IX.sqspeed] = norm(DEFS[IX.sqspeed], x < 0.12 && r <= 18 ? 0 : x > 0.9 && r >= 36 ? 2 : 1);
+  state[k][IX.sqspeed] = norm(DEFS[IX.sqspeed], 1);
   const o = Math.random(); state[k][IX.sqoct] = norm(DEFS[IX.sqoct], o < 0.1 ? -1 : o > 0.9 ? 1 : 0);
 }
 function fullSeqRandom(q) { fixSeq(q); randRate(q); roomForNotes(q); randArpSettings(); genFromControls(q); randRhythm(q); randVel(q); setSeqDensity(q, highDensity()); randSpeedOct(q); shapeRandom(q); }
@@ -5580,6 +5731,8 @@ bulk(() => { randomizeAll(); randSeqs(); });
 setBpm(85 + Math.random() * 50);
 window.addEventListener('resize', () => { drawWaves(); if (ed.classList.contains('open')) { drawEditor(); renderStrip(); } });
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { drawWaves(); if (ed.classList.contains('open')) { drawEditor(); renderStrip(); } });
+
+window.__booted = true;
 </script>
 </body>
 </html>

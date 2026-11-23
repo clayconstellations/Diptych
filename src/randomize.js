@@ -134,7 +134,8 @@ function rvApart(d, side, other) {
 }
 // A parameter is locked if its own padlock is on or its whole section is locked.
 // Section locks sit on top of the individual ones, so unlocking a section brings back each knob's own setting.
-const isLocked = d => !!state.locks[d.id] || !!state.secLocks[d.group];
+// Position's padlock (the Synth panel's knob) locks the two table positions it stands for
+const isLocked = d => !!state.locks[d.id] || !!state.secLocks[d.group] || (d.slot === 0 && (d.key === 'posA' || d.key === 'posB') && !!state.locks.wpos);
 const inGroup = (d, g) => !g || d.group === g;
 const isFree = i => !isLocked(DEFS[i]) && !state.links[DEFS[i].id];
 /* OTT band gains: within ±3 dB, and never all boosting or all cutting on one side. A side where OTT is off

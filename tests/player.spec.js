@@ -108,7 +108,7 @@ test('the MORPH cap brings back the morph view; Settings change the colours and 
   await page.click('#setBtn');
   await expect(page.locator('#settings')).toBeVisible();
   await page.click('[data-scheme="1"]');
-  expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--a').trim().toUpperCase())).toBe('#0047AB');
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--a').trim().toUpperCase())).toBe('#2B2FE0');
   await page.click('#monoPill');
   expect(await page.evaluate(() => state.mono)).toBe(true);
   await page.click('#setDone');
@@ -122,7 +122,7 @@ test('each panel\'s dice roll only their part: Envelope, FX and Sound leave the 
       const A0 = state.A.slice(), B0 = state.B.slice(), seq0 = JSON.stringify(state.seq), t0 = tables[0].A;
       bulk(() => rollPart(part, 'M', 1));
       const changed = DEFS.filter((d, i) => state.A[i] !== A0[i] || state.B[i] !== B0[i]);
-      return { outside: changed.filter(d => !PART[part](d) && !d.pair && !d.single).map(d => d.id), inside: changed.filter(d => PART[part](d)).length,
+      return { outside: changed.filter(d => !PART[part](d) && !d.pair && !d.single && !(part === 'synth' && FILT_KEYS.has(d.key))).map(d => d.id), inside: changed.filter(d => PART[part](d)).length,
         seq: JSON.stringify(state.seq) === seq0, table: tables[0].A === t0 };
     }, part);
     expect(r.outside).toEqual([]);
@@ -218,4 +218,41 @@ test('the lanes keep their size on a 3x screen', async ({ browser }) => {
   const a = await h(); await page.evaluate(() => { for (let k = 0; k < 5; k++) drawLanes(); }); await page.waitForTimeout(100); const b = await h();
   expect(b).toEqual(a); expect(Math.max(...a) - Math.min(...a)).toBeLessThanOrEqual(1);
   await page.close();
+});
+
+test('FX dice move the FX macros; a locked knob and a locked section stay; Position\'s padlock holds the table positions', async ({ page }) => {
+  await openSynth(page, { dev: false });
+  const r = await page.evaluate(() => {
+    const out = {};
+    bulk(() => rollPart('fx', 'M', 1)); out.macros = [state.A[IX.mfx], state.B[IX.mwet]].every(x => x !== 0.5);
+    state.locks.mfx = true; const m0 = state.A[IX.mfx]; bulk(() => rollPart('fx', 'M', 1)); out.locked = state.A[IX.mfx] === m0;
+    state.locks.wpos = true; const p0 = state.A[oi(0, 'posA')]; bulk(() => rollPart('synth', 'M', 1)); out.pos = state.A[oi(0, 'posA')] === p0;
+    state.panelLocks.amp = true; state.panelLocks.seq = true; const a0 = state.A[IX.menv], q0 = JSON.stringify(state.seq);
+    bulk(() => rollAll(1)); out.section = state.A[IX.menv] === a0 && JSON.stringify(state.seq) === q0;
+    return out;
+  });
+  expect(r).toEqual({ macros: true, locked: true, pos: true, section: true });
+  // the padlock and chain under a knob, and the section padlock in a panel's title
+  await page.click(`[data-plink="mbright"]`);
+  expect(await page.evaluate(() => [!!state.links.mbright, state.A[IX.mbright] === state.B[IX.mbright]])).toEqual([true, true]);
+  await page.click('[data-panellock="synth"]');
+  expect(await page.evaluate(() => [state.panelLocks.synth, document.querySelector('.panel[data-panel="synth"]').classList.contains('plocked')])).toEqual([true, true]);
+});
+
+test('the FX rack: every effect\'s On / Off and knobs; a built-in side preset loads into one side', async ({ page }) => {
+  await openSynth(page, { dev: false });
+  await page.click('#fxEdit');
+  expect(await page.evaluate(() => [...document.querySelectorAll('.rrow')].map(r => r.querySelectorAll('.rknobs .kn').length))).toEqual([3, 3, 3, 3, 3, 3, 2]);
+  await page.click('#rackFx3 > span:nth-child(2)');   // Delay off
+  expect(await page.evaluate(() => state.fxOn[3])).toBe(false);
+  await page.click('.rrow[data-eng="delay"] .rname');
+  expect(await page.evaluate(() => [...document.querySelectorAll('.rrow[data-eng="delay"] .rmore .kn')].filter(k => k.offsetParent).length)).toBe(2);
+  await page.click('#rackDone');
+  const b0 = await page.evaluate(() => state.B.filter((_, i) => !DEFS[i].single).join());
+  await page.click('[data-spre="A"]'); await page.locator('.menu .mitem', { hasText: 'Acid Line' }).click();
+  const r = await page.evaluate(() => ({ name: state.sideNames.A, reso: +MorphEngine.denorm(DEFS[IX.reso], state.A[IX.reso]).toFixed(2), table: tables[0].A.name, on: state.A[oi(0, 'olevel')] > 0 }));
+  expect(r).toEqual({ name: 'Acid Line', reso: 0.8, table: 'Basic shapes', on: true });
+  expect(await page.evaluate(() => state.B.filter((_, i) => !DEFS[i].single).join())).toBe(b0);
+  // the harmonic table: any note, its right neighbour (a major third) and its upper-right one (a fifth)
+  expect(await page.evaluate(() => { kbHarm = true; const a = gridNote(0, 0, true), b = gridNote(1, 0, true), c = gridNote(0, 1, true); return [b.off - a.off, c.off - a.off]; })).toEqual([4, 7]);
 });

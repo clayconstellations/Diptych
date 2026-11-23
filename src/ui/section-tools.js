@@ -20,6 +20,7 @@ function updateFxUI() {
     b.setAttribute('aria-pressed', on); b.textContent = on ? 'On' : 'Off';
     b.closest('.group').classList.toggle('fxoff', !on);
   });
+  if (typeof updateRack === 'function') updateRack();
 }
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-fx], [data-osc]'); if (!b) return;

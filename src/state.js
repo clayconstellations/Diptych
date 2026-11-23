@@ -52,7 +52,7 @@ try {
       if (saved.C) state.C[i] = clampC(+saved.C[k] || 0);
     });
     state.morph = clamp(+saved.morph || 0);
-    for (const k of ['locks', 'links', 'secLocks', 'linkMem']) if (saved[k] && typeof saved[k] === 'object') state[k] = saved[k];
+    for (const k of ['locks', 'links', 'secLocks', 'linkMem', 'panelLocks']) if (saved[k] && typeof saved[k] === 'object') state[k] = saved[k];
     state.mono = !!saved.mono;
     if (Array.isArray(saved.fxOn) && saved.fxOn.length === NFX) state.fxOn = saved.fxOn.map(Boolean);
     if (Array.isArray(saved.oscOn)) state.oscOn = OSC_KIND.map((_, s) => saved.oscOn[s] !== false);   // ver 3 added FM (a fifth oscillator)

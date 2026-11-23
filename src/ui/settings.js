@@ -4,13 +4,13 @@
    morph passes between them) and Mono / Poly for the keys. Per browser
    conveniences, kept in localStorage, not part of the patch.
    ===================================================================== */
-const SCHEMES = [   // [name, A light, B light, A dark, B dark] (2026-11-11, sixth pass)
-  ['Twin Flame', '#0092B5', '#E62E9C', '#3FD7F2', '#FF5CC2'],   // Ultra's old cyan-blue, and a magenta pink
-  ['Ultra', '#0047AB', '#B0102E', '#4C7DFF', '#F23B57'],        // cobalt, and ruby
-  ['Iris', '#108A55', '#5A3FC4', '#3FD68F', '#9A86FF'],         // leaf green, and iris violet (sides swapped)
+const SCHEMES = [   // [name, A light, B light, A dark, B dark] (2026-11-23)
+  ['Twin Flame', '#0092B5', '#E62E9C', '#3FD7F2', '#FF5CC2'],   // cyan-blue, and a magenta pink
+  ['Ultra', '#2B2FE0', '#B0102E', '#6A72FF', '#F23B57'],        // ultramarine, and ruby
+  ['Iris', '#108A55', '#5A3FC4', '#3FD68F', '#9A86FF'],         // leaf green, and iris violet
   ['Seaglass', '#2DB58C', '#E8787A', '#7FF0C4', '#FF9E9B'],     // seafoam, and a coral-tinted pink
-  ['Aurora', '#3E8F12', '#0B1745', '#7CC43A', '#2A3F94'],       // a warmer, darker aurora green, and a deeper night sky (sides swapped)
-  ['Volcano', '#1B1C1F', '#F01E10', '#4A4C52', '#FF3B2B'],      // ember black (cooler, darker), and a vivid lava red
+  ['Lumanautics', '#F26A0F', '#97A1AE', '#FF8A2A', '#D5DBE5'],  // orange, and light grey
+  ['Volcano', '#1B1C1F', '#F01E10', '#4A4C52', '#FF3B2B'],      // ember black, and a vivid lava red
 ];
 /* the cog, drawn evenly: eight identical teeth around a ring, and the hole in the middle */
 const COG = (() => {
@@ -63,8 +63,9 @@ document.addEventListener('pointerdown', e => {
 
 /* the grid and hexagon layouts (ui/keyboard.js): in key (the scale's notes only) or chromatic (all twelve, the notes in
    the key lit more brightly), and the interval between rows: a third, a fourth (the usual choice) or a fifth */
-let kbChrom = pref('diptych-chrom', '0') === '1', kbRow = Math.max(0, Math.min(2, +pref('diptych-row', '1')));
-const syncGridPrefs = () => { setPill($('chromPill'), kbChrom ? 1 : 0); setPill($('rowPill'), kbRow); };
+let kbHarm = pref('diptych-harm', '0') === '1', kbChrom = pref('diptych-chrom', '0') === '1', kbRow = Math.max(0, Math.min(2, +pref('diptych-row', '1')));
+const syncGridPrefs = () => { setPill($('chromPill'), kbChrom ? 1 : 0); setPill($('rowPill'), kbRow); setPill($('hexPill'), kbHarm ? 1 : 0); };
+onPill($('hexPill'), k => { kbHarm = k === 1; setPref('diptych-harm', kbHarm ? '1' : '0'); syncGridPrefs(); if (typeof buildKeys === 'function') buildKeys(); });
 onPill($('chromPill'), k => { kbChrom = k === 1; setPref('diptych-chrom', kbChrom ? '1' : '0'); syncGridPrefs(); if (typeof buildKeys === 'function') buildKeys(); });
 onPill($('rowPill'), k => { kbRow = k; setPref('diptych-row', String(kbRow)); syncGridPrefs(); if (typeof buildKeys === 'function') buildKeys(); });
 syncGridPrefs();

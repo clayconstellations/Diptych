@@ -16,6 +16,7 @@ function applyLayout() {
   app.style.zoom = desk ? Math.min(innerWidth / dw, innerHeight / dh) : '';
   document.documentElement.style.setProperty('--kbh', $('kb').getBoundingClientRect().height + 'px');   // the editors leave the bottom panel visible
   document.documentElement.style.setProperty('--toph', document.querySelector('.top').getBoundingClientRect().bottom + 'px');   // and the header (2026-11-11)
+  if (window.__booted) updateKnobs();
   drawWaves();
 }
 let layoutTimer = null;

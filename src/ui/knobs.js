@@ -44,7 +44,7 @@ const knobSVG = (d, i) => `<svg viewBox="0 0 80 80" aria-hidden="false">
 const groupsEl = document.getElementById('groups');
 const knobHTML = (d, i) => `<div class="kn${isBasic(d) ? '' : ' adv'}">
     <div class="kname">${d.label}</div>
-    <div class="kwrap"><div class="knob" id="k${i}">${knobSVG(d, i)}</div>${iconBtn(d.id, d.label, d.single)}</div>
+    <div class="kwrap"><div class="knob" id="k${i}">${knobSVG(d, i)}</div>${iconBtn(d.id, d.label, d.single || d.seq || d.pair)}</div>
     <div class="kval" id="v${i}"></div>
     <div class="kab"><span class="a" id="va${i}"></span><span class="b" id="vb${i}"></span></div>
   </div>`;
@@ -197,9 +197,19 @@ function updateKnob(i) {
 /* Latency (2026-11-11): the player's view only shows the knobs in the panels, so only those are redrawn when the morph
    or a whole patch changes (the developer view redraws every knob). Redrawing all of them on every move of the morph
    slider was most of the work on a phone. */
-let liveCache = null;
-const liveKnobs = () => (typeof devView !== 'undefined' && devView ? DEFS.map((_, i) => i)
-  : liveCache || (liveCache = DEFS.map((d, i) => i).filter(i => !DEFS[i].opts && $('k' + i) && $('k' + i).closest('#panels'))));
+const liveCache = {};
+/* which knobs are on screen: on desktop every panel's, on a phone the current tab's; the FX rack's only while it is open */
+function liveKnobs() {
+  if (typeof devView !== 'undefined' && devView) return DEFS.map((_, i) => i);
+  const desk = document.body.classList.contains('desk'), tab = typeof curTab === 'undefined' ? 'synth' : curTab, rack = typeof rackOpen !== 'undefined' && rackOpen;
+  const key = (desk ? 'desk' : tab) + (rack ? '+rack' : '');
+  return liveCache[key] || (liveCache[key] = DEFS.map((d, i) => i).filter(i => {
+    if (DEFS[i].opts) return false;
+    const el = $('k' + i), p = el && el.closest('.panel'); if (!p) return false;
+    if (el.closest('.rack') && !rack) return false;
+    return desk || p.dataset.panel === tab;
+  }));
+}
 function updateKnobs() { for (const i of liveKnobs()) updateKnob(i); }
 function refreshAll() { updateKnobs(); updateMorphUI(); }
 function setParam(side, i, x) {
@@ -315,7 +325,7 @@ DEFS.forEach((d, i) => { if (!d.opts) bindKnob(i); });
    sequencer's knobs move into the panels (Synth, Amp, Filt, FX, Seq), and the Sound and Sequence cards go away. */
 {
   const put = (box, keys) => keys.forEach(k => $(box).appendChild($('k' + IX[k]).closest('.kn')));
-  put('pk_synth', ['mbright', 'wpos']); put('pk_amp', ['menv']); put('pk_filt', ['cutoff', 'reso', 'envamt']); put('pk_fx', ['mfx', 'mwet']); put('pk_seq', ['pattern', 'sqdens', 'sqspeed', 'sqoct']);
+  put('pk_synth', ['mbright', 'wpos']); put('pk_amp', ['menv']); put('pk_filt', ['cutoff', 'reso', 'envamt']); put('pk_fx', ['mfx', 'mwet']); put('pk_seq', ['pattern', 'sqdens', 'sqoct', 'sqspeed']); $('k' + IX.sqspeed).closest('.kn').style.display = 'none';   // Speed is fixed at 1x and its knob hidden (2026-11-23)
   $('patKnob').remove();
   for (const g of ['Sound', 'Sequence']) { if (sections[g]) { sections[g].remove(); delete sections[g]; } }
 }

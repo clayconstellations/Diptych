@@ -176,7 +176,7 @@ function shapeRandom(s) {
 function randSpeedOct(q) {
   const k = sideOf(q); if (!k) return;
   const r = RATES[q.rate][1] || 18, x = Math.random();   // Mixed counts as fairly quick
-  state[k][IX.sqspeed] = norm(DEFS[IX.sqspeed], x < 0.12 && r <= 18 ? 0 : x > 0.9 && r >= 36 ? 2 : 1);
+  state[k][IX.sqspeed] = norm(DEFS[IX.sqspeed], 1);
   const o = Math.random(); state[k][IX.sqoct] = norm(DEFS[IX.sqoct], o < 0.1 ? -1 : o > 0.9 ? 1 : 0);
 }
 function fullSeqRandom(q) { fixSeq(q); randRate(q); roomForNotes(q); randArpSettings(); genFromControls(q); randRhythm(q); randVel(q); setSeqDensity(q, highDensity()); randSpeedOct(q); shapeRandom(q); }

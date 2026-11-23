@@ -127,19 +127,18 @@ test('FM guardrails: patches come from the archetypes, stay in bounds and play c
   expect(r.clean.every(Boolean)).toBe(true);
 });
 
-test('Speed and Octave change what plays; Density is each side\'s own setting', async ({ page }) => {
+test('Octave changes what plays; Density is each side\'s own setting; Speed stays at 1x', async ({ page }) => {
   await openSynth(page, { seed: 44 });
   const r = await page.evaluate(() => {
     const set = (k, key, v) => { state[k][IX[key]] = norm(DEFS[IX[key]], v); seqCache = null; };
-    randSeqs(); set('A', 'sqspeed', 1); set('B', 'sqspeed', 1); set('A', 'sqoct', 0); set('A', 'sqdens', 1);
+    randSeqs(); set('A', 'sqoct', 0); set('A', 'sqdens', 1);
     const base = buildSeq().events.filter(e => e.a).map(e => [e.tick, e.a.p]);
-    set('A', 'sqspeed', 2); const fast = buildSeq().events.filter(e => e.a).map(e => [e.tick, e.a.p]);
-    set('A', 'sqspeed', 1); set('A', 'sqoct', 1); const up = buildSeq().events.filter(e => e.a).map(e => [e.tick, e.a.p]);
+    set('A', 'sqspeed', 2); const fast = buildSeq().events.filter(e => e.a).map(e => [e.tick, e.a.p]);   // the old Speed setting no longer does anything
+    set('A', 'sqoct', 1); const up = buildSeq().events.filter(e => e.a).map(e => [e.tick, e.a.p]);
     set('A', 'sqoct', 0); set('A', 'sqdens', 0.5); const thin = buildSeq().events.filter(e => e.a).length;
-    return { base, fast, up, thin, dA: stepPos(state.seq.A).total };
+    return { base, fast, up, thin };
   });
-  // 2x: every note at half the tick, twice per loop
-  expect(r.fast.filter(([t]) => t < r.dA / 2).map(([t, p]) => [t * 2, p])).toEqual(r.base.filter(([t]) => t < r.dA));
+  expect(r.fast).toEqual(r.base);
   expect(r.up.map(([t, p]) => [t, p - 12])).toEqual(r.base);
   expect(r.thin).toBeLessThan(r.base.length);
 });
@@ -177,18 +176,18 @@ test('ver 2 patches: each pattern\'s Density becomes its side\'s Density setting
 
 test.describe('player\'s view on a phone', () => {
   test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
-  test('the four panels as tabs: one at a time, knobs in one row, no padlocks, no page scroll', async ({ page }) => {
+  test('the panels as tabs: one at a time, knobs in one row, no page scroll', async ({ page }) => {
     await openSynth(page, { dev: false });
     for (const t of ['synth', 'amp', 'filt', 'fx', 'seq', 'play']) {
       await page.locator(`[data-tab="${t}"]`).tap();
       const m = await page.evaluate(t => {
         const shown = [...document.querySelectorAll('.panel')].filter(p => p.offsetParent).map(p => p.dataset.panel);
-        const tops = [...document.querySelectorAll(`.panel[data-panel="${t}"] .knobs .kn`)].map(k => Math.round(k.getBoundingClientRect().top));
-        return { shown, oneRow: new Set(tops).size <= 1, icons: [...document.querySelectorAll('.lock')].filter(b => b.offsetParent).length,
+        const tops = [...document.querySelectorAll(`.panel[data-panel="${t}"] .knobs .kn`)].filter(k => k.offsetParent).map(k => Math.round(k.getBoundingClientRect().top));
+        return { shown, oneRow: new Set(tops).size <= 1,
           side: document.documentElement.scrollWidth - innerWidth, down: document.documentElement.scrollHeight - innerHeight, view: !!$('viewPill').offsetParent,
           morph: $('morph').getBoundingClientRect().bottom <= innerHeight };
       }, t);
-      expect(m).toEqual({ shown: [t], oneRow: true, icons: 0, side: 0, down: 0, view: false, morph: true });
+      expect(m).toEqual({ shown: [t], oneRow: true, side: 0, down: 0, view: false, morph: true });
     }
     await page.locator('[data-tab="seq"]').tap();
     await page.locator('#qScale').selectOption('Dorian');

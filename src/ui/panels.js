@@ -25,6 +25,7 @@ function setTab(t) {
   document.querySelectorAll('.panel').forEach(p => p.classList.toggle('on', p.dataset.panel === t));
   try { localStorage.setItem('diptych-tab', t); } catch (e) {}
   if (typeof buildKeys === 'function' && t === 'play') requestAnimationFrame(buildKeys);
+  if (window.__booted) updateKnobs();   // only the current tab's knobs are kept drawn on a phone
   drawWaves();
 }
 document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => setTab(b.dataset.tab)));

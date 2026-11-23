@@ -559,3 +559,15 @@ Owner: any combination of sections might be wanted at once; too much scrolling; 
 - Side preset menus sit below the A and B keys and open upward.
 - Leaving a side, the MORPH cap was drawn at A's end (it measured its own width while still shrinking from the full slot); it now uses its resting width, so it returns to where the morph is.
 - A constant `theme-color` (the base background) for the browser's top strip; the strip above the page belongs to the browser or the app around the page, which samples the page's colour on its own schedule.
+
+### Eighth pass (2026-11-23)
+- **Side focus:** the other side's key and the MORPH block grey out (both still work).
+- **FX rack** (`ui/rack.js`): Edit on the FX panel opens a rack over it: a row per effect with its name, an On / Off pill and its mix plus one or two characterful knobs (Drive: Mix, Drive, Shape; Formant: Mix, Vowel, Resonance; Modulation: Mix, Type, Rate; Delay: Mix, Time, Feedback; Reverb: Mix, Size, Decay; Lo-fi: Character, Wow, Noise mix; OTT: Depth, Time). Tapping a name opens the rest of that effect's knobs under its row. The knobs are the real ones, moved from the developer sections (the developer view keeps them and has no rack).
+- **FX dice move FX intensity and FX wet** (20 to 80%); a plain roll leaves the macros at 50%, so the dice seemed not to reach them.
+- **Seq:** Walk / Swap sits in the bottom row opposite Edit. **Speed is gone**: the sequencer always plays at 1x (the parameter remains so patches load; `buildSeq` ignores it).
+- **Selections and actions:** tabs, pills and colourways are flat segments that light in yellow; actions stay raised keys that press in.
+- **Locks and links are back in the player's view:** a padlock under every panel knob (the dice skip it; Position's holds both table positions; holding a die and tapping a locked knob does nothing), a chain under every knob that can link (A and B share one value; not Position, Density or Octave), and a padlock in each panel's title: a locked section's own dice rest (dimmed) and the Everything die passes over it (`state.panelLocks`, saved with the patch and in global presets).
+- **Keys** is the Play tab's new name. Settings: rows read 3rd / 4th / 5th in equal boxes; **Hexagon layout: Rows or Harmonic table** (a major third to the right, a fifth up-right, a minor third up-left: any three neighbouring hexagons are a triad; always chromatic, the key's notes lit).
+- **Ten built-in side presets** (Glass Pluck, Warm Pad, Round Bass, Acid Line, Hollow Organ, Shimmer Bell, Tape Keys, Vowel Lead, Crushed Square, Night Drone), written in real units over a plain base in `ui/presets.js`; they head the side menus and can't be deleted; loading one level-matches it.
+- **Colourways:** Ultra's blue is ultramarine; Aurora is replaced by **Lumanautics** (orange and light grey).
+- The player's view keeps only the knobs on screen drawn: the current tab's on a phone (redrawn on a tab change), every panel's on desktop, the rack's only while it is open.

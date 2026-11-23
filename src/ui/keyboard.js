@@ -26,6 +26,9 @@ let hexStep = 1;   // a third, a fourth, a fifth: in scale steps (in key) or sem
    Wicki-Hayden layout) and up-right is the row interval */
 function gridNote(right, up, hex) {
   const root = keyRoot(), sc = keyScale(), n = sc.length, pcs = new Set(sc.map(x => (x + root) % 12));
+  if (hex && kbHarm) {   // the harmonic table: a major third to the right, a fifth up-right, so a minor third up-left; any three neighbours make a triad
+    const off = root + right * 4 + up * 7, pc = ((off % 12) + 12) % 12; return { off, inKey: pcs.has(pc), isRoot: pc === root };
+  }
   if (!kbChrom) { const d = right + up * ROW_STEPS[kbRow]; return { off: root + sc[((d % n) + n) % n] + 12 * Math.floor(d / n), inKey: true, isRoot: ((d % n) + n) % n === 0 }; }
   const semis = right * (hex ? hexStep : 1) + up * ROW_SEMIS[kbRow], off = root + semis, pc = ((off % 12) + 12) % 12;
   return { off, inKey: pcs.has(pc), isRoot: pc === root };
@@ -56,7 +59,7 @@ function buildKeys() {
   } else {   // hexagons, pointed at the top, each row shifted half a cell from the one below
     let w = cell * 1.05;
     hexStep = 1;
-    if (kbChrom && kbRow === 2) { const fit = (W - 4) / 7.5; if (fit >= 40) { w = Math.min(w, fit); hexStep = 2; } }
+    if (kbChrom && kbRow === 2 && !kbHarm) { const fit = (W - 4) / 7.5; if (fit >= 40) { w = Math.min(w, fit); hexStep = 2; } }
     const h = w * 1.1547, dy = h * 0.75, cols = Math.max(4, Math.floor((W - w / 2) / w)), rows = Math.max(3, Math.floor((H - h) / dy) + 1);
     const ox = (W - (cols * w + w / 2)) / 2, oy = (H - ((rows - 1) * dy + h)) / 2;
     for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {

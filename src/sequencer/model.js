@@ -170,7 +170,7 @@ function assignThresholds(list) {
 let seqCache = null;
 function buildSeq() {
   if (seqCache) return seqCache;
-  const A = state.seq.A, B = state.seq.B, fA = SPEED[seqSetting('A', 'sqspeed')], fB = SPEED[seqSetting('B', 'sqspeed')];
+  const A = state.seq.A, B = state.seq.B, fA = 1, fB = 1;   // Speed is gone from the player's view and stays at 1x (2026-11-23); the parameter remains so patches load
   const dA = stepPos(A).total * fA, dB = stepPos(B).total * fB;
   let loop = dA / gcd(dA, dB) * dB;
   if (loop > 48 * 4 * 64) loop = Math.max(dA, dB);
