@@ -30,6 +30,8 @@ function toggleLink(i) {
     if (m) { state.A[i] = m[0]; state.B[i] = m[1]; delete state.linkMem[id]; }
   }
   if (ready) { send({ type:'param', side:'A', i, v: state.A[i] }); send({ type:'param', side:'B', i, v: state.B[i] }); }
+  if (d.pair) pushPair(i);
+  if (d.seq) seqChanged();
   updateKnob(i); updateIcons(); drawWaves(); save();
 }
 document.addEventListener('click', e => {

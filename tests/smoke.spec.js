@@ -161,8 +161,8 @@ test.describe('phone', () => {
   test('every panel has its own boxed dice (A, B, Both) that fit; a low roll changes less than a high one', async ({ page }) => {
     await openSynth(page, { dev: false });
     const m = await page.evaluate(() => [...document.querySelectorAll('.dbox')].map(b => ({ scope: b.dataset.scope, caps: [...b.querySelectorAll('.dcap')].map(c => c.textContent), faces: [...b.querySelectorAll('.face')].map(f => f.children.length) })));
-    expect(m).toEqual(['synth', 'amp', 'filt', 'fx', 'seq'].map(scope => ({ scope, caps: ['A', 'B', 'Both'], faces: [1, 2, 3] })));   // one and two make three
-    for (const t of ['synth', 'amp', 'filt', 'fx', 'seq']) {   // each tab's panel fits the phone with no sideways scroll, and the page itself doesn't scroll
+    expect(m).toEqual(['synth', 'amp', 'fx', 'seq'].map(scope => ({ scope, caps: ['A', 'B', 'Both'], faces: [1, 2, 3] })));   // one and two make three
+    for (const t of ['synth', 'amp', 'fx', 'seq']) {   // each tab's panel fits the phone with no sideways scroll, and the page itself doesn't scroll
       await page.locator(`[data-tab="${t}"]`).tap();
       const f = await page.evaluate(t => { const r = document.querySelector(`.panel[data-panel="${t}"] .dbox`).getBoundingClientRect(); return { right: r.right <= innerWidth, page: document.documentElement.scrollHeight <= innerHeight + 1 }; }, t);
       expect(f).toEqual({ right: true, page: true });
@@ -223,9 +223,9 @@ for (const [name, size] of [['desktop', { width: 1440, height: 900 }], ['phone',
     const shown = g => page.evaluate(g => [...sections[g].querySelectorAll('.kn')].filter(k => k.offsetParent).length, g);
     expect(await page.evaluate(() => document.body.classList.contains('full'))).toBe(false);   // Basic is the default
     const before = await rects(), basic = await shown('Delay');
-    expect(basic).toBe(3);
+    expect(basic).toBe(2);   // Time and Feedback (Mix sits on the FX panel since 2026-11-23)
     await page.locator('section[data-group="Delay"] .gname').click();
-    expect(await shown('Delay')).toBe(5);
+    expect(await shown('Delay')).toBe(4);
     await expect(page.locator('section[data-group="Delay"] [data-dice="Delay"][data-side="A"]')).toBeVisible();
     await expect(page.locator('section[data-group="Delay"] .swrow')).toBeVisible();
     const near = (a, b) => a.length === b.length && a.every((r, k) => r.split(',').every((v, j) => Math.abs(v - b[k].split(',')[j]) <= 1));   // within a pixel (the scaled layout rounds)
@@ -237,7 +237,7 @@ for (const [name, size] of [['desktop', { width: 1440, height: 900 }], ['phone',
     await page.locator('section[data-group="Delay"] .seg.b [data-v="1"]').click();
     expect(await page.evaluate(() => state.B[IX.dlspill])).toBe(1);
     await page.keyboard.press('Escape');
-    expect(await shown('Delay')).toBe(3);
+    expect(await shown('Delay')).toBe(2);
     await page.locator('section[data-group="Filter"] .gname').click();
     await page.locator('section[data-group="Filter"] .gdone').click();
     expect(await page.locator('.group.open').count()).toBe(0);

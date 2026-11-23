@@ -12,18 +12,19 @@
    as before for the target side(s), everything outside the part goes back to where it was, then every value in the part
    moves only `amt` of the way toward the new roll (stepped values round, switches flip with chance amt; on Sound each
    wavetable is replaced with chance amt). On Sound the guards (level match, sine and loudness guards) run again. */
+const SEQ_P = ['sqdens', 'sqspeed', 'sqoct', 'sqswing', 'sqgate'];   // what the Seq dice roll besides the notes
 const AMP_KEYS = new Set(['aatk', 'adec', 'asus', 'arel', 'menv']);
 const FILT_KEYS = new Set(['cutoff', 'reso', 'mode', 'envamt', 'keytrack', 'fatk', 'fdec', 'fsus', 'frel']);
 const isFxD = d => d.kind === 'fx' || d.key === 'mfx' || d.key === 'mwet', isSeqD = d => !!d.seq || d.group === 'Sequencer';
 /* Section padlocks (2026-11-23): each panel's padlock keeps its part out of every roll: its own dice rest (dimmed) and
    the Everything die passes over it. Kept with the patch (state.panelLocks). */
 if (!state.panelLocks || typeof state.panelLocks !== 'object') state.panelLocks = {};
-const panelOf = d => (isSeqD(d) ? 'seq' : AMP_KEYS.has(d.key) ? 'amp' : FILT_KEYS.has(d.key) ? 'filt' : isFxD(d) ? 'fx' : 'synth');
+const panelOf = d => (isSeqD(d) ? 'seq' : AMP_KEYS.has(d.key) ? 'amp' : isFxD(d) ? 'fx' : 'synth');   // the filter belongs to Synth (2026-11-23)
 const PART = {
   amp: d => AMP_KEYS.has(d.key),
   filt: d => FILT_KEYS.has(d.key),
   fx: isFxD,
-  synth: d => !AMP_KEYS.has(d.key) && !FILT_KEYS.has(d.key) && !isFxD(d) && !isSeqD(d),
+  synth: d => !AMP_KEYS.has(d.key) && !isFxD(d) && !isSeqD(d),
   all: d => !isSeqD(d) && !state.panelLocks[panelOf(d)],
 };
 function updatePanelLocks() {
@@ -57,7 +58,7 @@ function rollPart(part, side, s) {
     }
     if (sides.length === 2) state.C = state.C.map((c, i) => old.C[i] + (c - old.C[i]) * amt);
   }
-  for (const k of sides) { if (wavesToo) levelMatch(k); if (wavesToo || (part === 'filt') || (part === 'all' && !state.panelLocks.filt)) { sineGuard(k); loudnessGuard(k); } }
+  for (const k of sides) { if (wavesToo) levelMatch(k); if (wavesToo) { sineGuard(k); loudnessGuard(k); } }
 }
 const rollSound = (side, s) => rollPart('synth', side, s);
 // the header's die: everything, both sides (the sound by parts at this strength, and the sequences)
@@ -67,6 +68,7 @@ const rollAll = s => { rollPart('all', 'M', s); if (!state.panelLocks.seq) rollS
    melody in the scale), with rests and velocities shuffled in proportion. */
 function rollSeq(side, amt) {
   const sides = side === 'M' ? ['A', 'B'] : [side];
+  for (const k of sides) for (const key of ['sqswing', 'sqgate']) if (!state.locks[key]) { const i = IX[key], to = rv(DEFS[i], k); state[k][i] += (to - state[k][i]) * Math.min(1, amt); }
   if (amt >= 0.9) { if (sides.length === 2) randSeqs(); else randSeqSide(sides[0]); return; }
   for (const k of sides) {
     const q = state.seq[k], fresh = cloneSeq(q);
@@ -96,7 +98,7 @@ function makePath(what, side) {
   if (what === 'all') rollAll(1); else if (what === 'seq') rollSeq(side, 1); else rollPart(what, side, 1);
   const full = keepState();
   // locked sequencer knobs (Density, Octave) and a locked Seq section stay where they are
-  for (const k of ['A', 'B']) for (const key of ['sqdens', 'sqspeed', 'sqoct']) if (state.locks[key]) full[k][IX[key]] = base[k][IX[key]];
+  for (const k of ['A', 'B']) for (const key of SEQ_P) if (state.locks[key]) full[k][IX[key]] = base[k][IX[key]];
   const seqHeld = what === 'all' && state.panelLocks.seq;
   if (seqHeld) full.seq = JSON.parse(JSON.stringify(base.seq));
   putState(base);
@@ -125,13 +127,13 @@ function pathAt(P, x) {
   if (P.what === 'seq' || P.what === 'all') {
     if (x >= 0.85) {
       state.seq = JSON.parse(JSON.stringify(full.seq));
-      for (const k of ['A', 'B']) for (const key of ['sqdens', 'sqspeed', 'sqoct']) state[k][IX[key]] = full[k][IX[key]];
+      for (const k of ['A', 'B']) for (const key of SEQ_P) state[k][IX[key]] = full[k][IX[key]];
     } else {
       state.seq = JSON.parse(JSON.stringify(base.seq));
       for (const k of ['A', 'B']) {
         const q = state.seq[k], pq = P.part[k];
         q.steps.forEach((st, i) => { if (pq.steps[i] && x / 0.85 > P.useq[k][i]) { st.note = pq.steps[i].note; st.on = pq.steps[i].on; st.vel = pq.steps[i].vel; } });
-        if (P.what === 'seq') for (const key of ['sqdens', 'sqspeed', 'sqoct']) state[k][IX[key]] = base[k][IX[key]];
+        if (P.what === 'seq') for (const key of SEQ_P) state[k][IX[key]] = base[k][IX[key]];
       }
     }
   }

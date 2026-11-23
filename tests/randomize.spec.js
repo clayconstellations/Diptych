@@ -49,9 +49,9 @@ test.describe('Randomize all (shaped)', () => {
     for (const x of free) expect(Math.abs(x.db)).toBeLessThan(0.01);
     for (const x of m) expect(x.db).toBeLessThan(0.01);   // a Level at 100% can leave a quiet sample short, never over
   });
-  test('each side hears about 2.3 effects on average', () => {
+  test('each side hears about 2.8 effects on average (OTT is always on since 2026-11-23)', () => {
     const n = S.flatMap(r => r.heard), mean = n.reduce((a, b) => a + b, 0) / n.length;
-    expect(mean).toBeGreaterThan(1.9); expect(mean).toBeLessThan(2.7);
+    expect(mean).toBeGreaterThan(2.4); expect(mean).toBeLessThan(3.2);
   });
   test('Cut / Spill is 50/50 on each side', () => near(share(all('dlspill'), x => x === 1), 0.5, 0.06));
   test('Wave stays at full range (A 0%, B 100%) in every Wavetable slot', () => {
@@ -61,8 +61,9 @@ test.describe('Randomize all (shaped)', () => {
     const fails = S.flatMap(r => r.spreadFails);
     expect(fails, fails.join(', ')).toEqual([]);
   });
-  test('effects on for a side: Drive 20%, Formant 10%, Modulation 40%, Delay 50%, Reverb 50%, OTT 50%', () => {
-    for (const [k, want] of [['dmix', 0.2], ['fmix', 0.1], ['mmix', 0.4], ['dlmix', 0.5], ['rvmix', 0.5], ['ottdepth', 0.5]]) near(share(all(k), x => x > 0), want, 0.06);
+  test('effects on for a side: Drive 20%, Formant 10%, Modulation 40%, Delay 50%, Reverb 50%; OTT always, Depth locked at 50%', () => {
+    for (const x of all('ottdepth')) expect(x).toBeCloseTo(0.5, 9);
+    for (const [k, want] of [['dmix', 0.2], ['fmix', 0.1], ['mmix', 0.4], ['dlmix', 0.5], ['rvmix', 0.5]]) near(share(all(k), x => x > 0), want, 0.06);
   });
   test('effect mixes: at most two above 50% and at most one above 90%', () => {
     for (const v of perSide()) {
@@ -104,7 +105,10 @@ test.describe('Randomize all (shaped)', () => {
     const worst = Math.min(...S.flatMap(r => r.passed));
     expect(worst).toBeGreaterThanOrEqual(-20);
   });
-  test('amp sustain 20% or more', () => { for (const x of all('asus')) expect(x).toBeGreaterThanOrEqual(0.2 - 1e-9); });
+  test('amp envelope: plucks (sustain under 25%) three times in ten; the Envelope macro rests at 50%', () => {
+    near(share(all('asus'), x => x < 0.25), 0.3, 0.06);
+    for (const x of all('menv')) expect(x).toBe(0.5);
+  });
   test('oscillators: Bypass off in 80%, Sub Octave -1 in 60%', () => {
     near(share(all('byp'), x => x === 0), 0.8, 0.05);
     near(share(all('soct'), x => x === -1), 0.6, 0.08);

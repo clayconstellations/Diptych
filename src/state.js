@@ -1,8 +1,8 @@
 /* ---------- state + persistence ----------
    The fixed architecture (2026-10-17) starts fresh: it saves under a new key and ignores earlier patches, by decision.
    Parameters are matched by id, so patches survive new knobs; list changes need a migration keyed on `ver`. */
-const STORE = 'diptych-v5', STORE_VER = 3;
-const DEFAULT_LOCKS = () => ({ level: true, pan: true, pattern: true, 'o1.wave': true, 'o2.wave': true, 'o4.sample': true, 'o5.fmx': true, ottout: true });
+const STORE = 'diptych-v5', STORE_VER = 4;
+const DEFAULT_LOCKS = () => ({ level: true, pan: true, pattern: true, 'o1.wave': true, 'o2.wave': true, 'o4.sample': true, 'o5.fmx': true, ottout: true, ottdepth: true });   // OTT Depth: on at 50% and locked by default (2026-11-23)
 const DEFAULT_LINKS = () => ({ 'o1.pitch': true, 'o1.fine': true, 'o2.pitch': true, 'o2.fine': true, 'o4.spitch': true, 'o4.sfine': true, 'o5.fpitch': true, ottout: true });
 const DEFAULT_OSCON = () => OSC_KIND.map(() => true);
 const DEFAULT_SMP = () => ({ A: { name: 'Plucked string' }, B: { name: 'Vocal ah' } });   // the Sampler's sample references
@@ -28,6 +28,8 @@ const state = {
 };
 const tables = DEFAULT_TABLES();   // tables[slot].A / .B for each Wavetable slot (slots 0 and 1)
 
+// defaults beyond the parameter list (2026-11-23): OTT on at 50% Depth on both sides (locked), and the Seq section locked
+state.A[IX.ottdepth] = state.B[IX.ottdepth] = 0.5; state.panelLocks = { seq: true };
 function enc(f) {
   const i16 = new Int16Array(f.length);
   for (let n = 0; n < f.length; n++) i16[n] = Math.max(-32767, Math.min(32767, Math.round(f[n] * 32767)));
@@ -66,6 +68,7 @@ try {
     }
     if (saved.bpm) state.bpm = Math.max(40, Math.min(240, +saved.bpm || 120));
     state.walk = saved.walk !== false;
+    if (!(saved.ver >= 4)) { state.locks.ottdepth = true; state.A[IX.ottdepth] = state.B[IX.ottdepth] = 0.5; state.panelLocks = { ...(state.panelLocks || {}), seq: true }; }   // ver 4: the new defaults
     if (typeof saved.presetName === 'string') state.presetName = saved.presetName;   // the current presets' names (2026-11-11)
     if (saved.sideNames && typeof saved.sideNames === 'object') state.sideNames = { A: String(saved.sideNames.A || ''), B: String(saved.sideNames.B || '') };
     if (Array.isArray(saved.tables)) saved.tables.slice(0, WT_SLOTS.length).forEach((t, s) => {

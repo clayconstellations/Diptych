@@ -48,6 +48,7 @@ function loadPreset(k) {
     if (typeof p.walk === 'boolean') state.walk = p.walk;
     (p.tables || []).slice(0, WT_SLOTS.length).forEach((t, s) => ['A', 'B'].forEach(side => { const d = t && decTable(t[side]); if (d) tables[s][side] = d; }));
     if (focus === 'M') state.morph = clamp(+p.morph || 0); else focusMem = clamp(+p.morph || 0);
+    bakeEnv('A'); bakeEnv('B');
     state.presetName = p.name; state.sideNames = p.sideNames ? { ...p.sideNames } : { A: '', B: '' };
   });
   if (p.bpm) setBpm(p.bpm);
@@ -82,7 +83,10 @@ $('gPre').addEventListener('click', () => {
   }, { label: 'Presets' });
 });
 /* ---------- side presets (one pool for A and B) ---------- */
-const sideKeys = () => DEFS.map((d, i) => i).filter(i => { const d = DEFS[i]; return !d.single && !d.seq && !d.pair && d.group !== 'Sequencer' && !isLinked(i); });
+/* Not in a side preset: Wave, Sample and Patch. They say which side's table a side reads (A 0%, B 100%); carried in a
+   preset they made B read table A, so changing A's preset changed the sound at full B (2026-11-23). */
+const CROSS = new Set(['wave', 'sample', 'fmx']);
+const sideKeys = () => DEFS.map((d, i) => i).filter(i => { const d = DEFS[i]; return !d.single && !d.seq && !d.pair && d.group !== 'Sequencer' && !isLinked(i) && !CROSS.has(d.key); });
 function sideNow(k) {
   const vals = {}; sideKeys().forEach(i => { vals[DEFS[i].id] = state[k][i]; });
   return { vals, pos: state[k][IX.wpos], table: { name: tables[0][k].name, frames: tables[0][k].frames.map(enc) }, smp: state.smp[k] ? { ...state.smp[k] } : null };
@@ -114,10 +118,12 @@ const sidePool = () => [...SIDE_FACTORY, ...readList(SIDE_KEY)];
 function loadSide(k, j) {
   const p = sidePool()[j]; if (!p) return;
   bulk(() => {
-    for (const [id, v] of Object.entries(p.vals || {})) { const i = IX[id]; if (i === undefined || DEFS[i].single || isLinked(i)) continue; state[k][i] = clamp(+v); }
+    for (const [id, v] of Object.entries(p.vals || {})) { const i = IX[id]; if (i === undefined || DEFS[i].single || isLinked(i) || CROSS.has(DEFS[i].key) || state.locks[id]) continue; state[k][i] = clamp(+v); }
+    DEFS.forEach((d, i) => { if (CROSS.has(d.key)) state[k][i] = k === 'A' ? 0 : 1; });   // each side reads its own table
     if (typeof p.pos === 'number') { const x = clamp(p.pos), q = oi(0, k === 'A' ? 'posA' : 'posB'); state.A[q] = state.B[q] = x; }
     const t = p.preset ? makeTable(p.preset) : decTable(p.table); if (t) tables[0][k] = t;
     if (p.smp && okRef(p.smp)) state.smp[k] = { ...p.smp };
+    bakeEnv(k);
     if (p.factory) { analyzeTable(0, k); levelMatch(k); }
     state.sideNames[k] = p.name;
   });

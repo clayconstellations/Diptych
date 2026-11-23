@@ -317,17 +317,20 @@ class MorphEngine {
     const S = this.seq, adv = this.bpm / 60 * 48 / this.sr * len, endT = this.stick + adv;
     for (let k = this.offs.length - 1; k >= 0; k--) if (this.offs[k].at <= endT) { this.noteOff(this.offs[k].note); this.offs.splice(k, 1); }
     const mm = this.val[this.I.pattern];
+    // Swing: every second sixteenth plays late, by up to half a sixteenth (6 ticks) at 75%; Gate: the share of its length a note sounds
+    const I = this.I, sw = I.sqswing === undefined ? 0 : Math.max(0, Math.min(6, (this.val[I.sqswing] - 0.5) * 24)), gate = I.sqgate === undefined ? 0.92 : this.val[I.sqgate];
+    const tk = ev => ev.tick + ((ev.tick / 12) % 2 === 1 ? sw : 0);
     let from = this.spos, to = from + adv;
     for (;;) {
       const lim = Math.min(to, S.loop);
-      while (this.ei < S.events.length && S.events[this.ei].tick < lim) {
+      while (this.ei < S.events.length && tk(S.events[this.ei]) < lim) {
         const ev = S.events[this.ei++], r = MorphEngine.seqEval(ev, mm, this.walk, S.scale);
         if (!r) continue;
         // monophonic: a new note always ends the one before it
         for (const o of this.offs) if (o.note !== r.note) this.noteOff(o.note);
         this.offs.length = 0;
         this.noteOn(r.note, 0.25 + 0.75 * r.vel);
-        this.offs.push({ note: r.note, at: this.stick + (ev.tick - from) + Math.max(1, r.len * 0.92) });
+        this.offs.push({ note: r.note, at: this.stick + (tk(ev) - from) + Math.max(1, r.len * gate) });
       }
       if (to >= S.loop) { to -= S.loop; from -= S.loop; this.ei = 0; } else break;
     }

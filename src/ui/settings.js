@@ -6,7 +6,7 @@
    ===================================================================== */
 const SCHEMES = [   // [name, A light, B light, A dark, B dark] (2026-11-23)
   ['Twin Flame', '#0092B5', '#E62E9C', '#3FD7F2', '#FF5CC2'],   // cyan-blue, and a magenta pink
-  ['Ultra', '#2B2FE0', '#B0102E', '#6A72FF', '#F23B57'],        // ultramarine, and ruby
+  ['Ultra', '#0A35C9', '#B0102E', '#2F62FF', '#F23B57'],        // a deep saturated blue (no violet), and ruby
   ['Iris', '#108A55', '#5A3FC4', '#3FD68F', '#9A86FF'],         // leaf green, and iris violet
   ['Seaglass', '#2DB58C', '#E8787A', '#7FF0C4', '#FF9E9B'],     // seafoam, and a coral-tinted pink
   ['Lumanautics', '#F26A0F', '#97A1AE', '#FF8A2A', '#D5DBE5'],  // orange, and light grey

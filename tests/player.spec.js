@@ -108,7 +108,7 @@ test('the MORPH cap brings back the morph view; Settings change the colours and 
   await page.click('#setBtn');
   await expect(page.locator('#settings')).toBeVisible();
   await page.click('[data-scheme="1"]');
-  expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--a').trim().toUpperCase())).toBe('#2B2FE0');
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--a').trim().toUpperCase())).toBe('#0A35C9');
   await page.click('#monoPill');
   expect(await page.evaluate(() => state.mono)).toBe(true);
   await page.click('#setDone');
@@ -117,12 +117,12 @@ test('the MORPH cap brings back the morph view; Settings change the colours and 
 
 test('each panel\'s dice roll only their part: Envelope, FX and Sound leave the rest alone', async ({ page }) => {
   await openSynth(page, { dev: false });
-  for (const part of ['amp', 'filt', 'fx', 'synth']) {
+  for (const part of ['amp', 'fx', 'synth']) {
     const r = await page.evaluate(part => {
       const A0 = state.A.slice(), B0 = state.B.slice(), seq0 = JSON.stringify(state.seq), t0 = tables[0].A;
       bulk(() => rollPart(part, 'M', 1));
       const changed = DEFS.filter((d, i) => state.A[i] !== A0[i] || state.B[i] !== B0[i]);
-      return { outside: changed.filter(d => !PART[part](d) && !d.pair && !d.single && !(part === 'synth' && FILT_KEYS.has(d.key))).map(d => d.id), inside: changed.filter(d => PART[part](d)).length,
+      return { outside: changed.filter(d => !PART[part](d) && !d.pair && !d.single).map(d => d.id), inside: changed.filter(d => PART[part](d)).length,
         seq: JSON.stringify(state.seq) === seq0, table: tables[0].A === t0 };
     }, part);
     expect(r.outside).toEqual([]);
@@ -135,12 +135,13 @@ test('each panel\'s dice roll only their part: Envelope, FX and Sound leave the 
 test('the header\'s Everything die rolls every part and both sequences; hold MORPH and tap B captures into B', async ({ page }) => {
   await openSynth(page, { dev: false });
   const r = await page.evaluate(() => {
+    state.panelLocks.seq = false;   // the Seq section is locked by default
     const A0 = state.A.slice(), seq0 = JSON.stringify(state.seq);
     bulk(() => rollAll(1));
-    const parts = ['synth', 'amp', 'filt', 'fx'].map(p => DEFS.some((d, i) => PART[p](d) && state.A[i] !== A0[i]));
+    const parts = ['synth', 'amp', 'fx'].map(p => DEFS.some((d, i) => PART[p](d) && state.A[i] !== A0[i]));
     return { parts, seq: JSON.stringify(state.seq) !== seq0, faces: document.querySelector('.alldie .face').children.length };
   });
-  expect(r).toEqual({ parts: [true, true, true, true], seq: true, faces: 5 });
+  expect(r).toEqual({ parts: [true, true, true], seq: true, faces: 5 });
   // hold the MORPH cap (one pointer) and tap B (another)
   await page.evaluate(() => { state.morph = 0.6; updateMorphUI(); });
   const heard = await page.evaluate(() => resolveNorm(IX.mbright));
@@ -173,7 +174,7 @@ test('a die rolls as it is pulled, keeps where you let go (one undo step), and b
 test('hold a die and tap a knob: only that knob rolls', async ({ page }) => {
   await openSynth(page, { dev: false });
   const before = await page.evaluate(() => [state.A.slice(), state.B.slice()]);
-  const box = await page.locator('.dicetrack[data-what="filt"][data-side="A"]').boundingBox();
+  const box = await page.locator('.dicetrack[data-what="synth"][data-side="A"]').boundingBox();
   await page.mouse.move(box.x + box.width / 2, box.y + box.height - 14); await page.mouse.down();
   await page.evaluate(() => $('k' + IX.reso).dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 7 })));
   await page.mouse.up();
@@ -227,8 +228,8 @@ test('FX dice move the FX macros; a locked knob and a locked section stay; Posit
     bulk(() => rollPart('fx', 'M', 1)); out.macros = [state.A[IX.mfx], state.B[IX.mwet]].every(x => x !== 0.5);
     state.locks.mfx = true; const m0 = state.A[IX.mfx]; bulk(() => rollPart('fx', 'M', 1)); out.locked = state.A[IX.mfx] === m0;
     state.locks.wpos = true; const p0 = state.A[oi(0, 'posA')]; bulk(() => rollPart('synth', 'M', 1)); out.pos = state.A[oi(0, 'posA')] === p0;
-    state.panelLocks.amp = true; state.panelLocks.seq = true; const a0 = state.A[IX.menv], q0 = JSON.stringify(state.seq);
-    bulk(() => rollAll(1)); out.section = state.A[IX.menv] === a0 && JSON.stringify(state.seq) === q0;
+    state.panelLocks.amp = true; state.panelLocks.seq = true; const a0 = state.A[IX.adec], q0 = JSON.stringify(state.seq);
+    bulk(() => rollAll(1)); out.section = state.A[IX.adec] === a0 && JSON.stringify(state.seq) === q0;
     return out;
   });
   expect(r).toEqual({ macros: true, locked: true, pos: true, section: true });
@@ -242,11 +243,11 @@ test('FX dice move the FX macros; a locked knob and a locked section stay; Posit
 test('the FX rack: every effect\'s On / Off and knobs; a built-in side preset loads into one side', async ({ page }) => {
   await openSynth(page, { dev: false });
   await page.click('#fxEdit');
-  expect(await page.evaluate(() => [...document.querySelectorAll('.rrow')].map(r => r.querySelectorAll('.rknobs .kn').length))).toEqual([3, 3, 3, 3, 3, 3, 2]);
+  expect(await page.evaluate(() => [...document.querySelectorAll('.rrow')].map(r => r.querySelectorAll('.rknobs .kn').length))).toEqual([2, 3, 3, 3, 3, 3, 2]);
   await page.click('#rackFx3 > span:nth-child(2)');   // Delay off
   expect(await page.evaluate(() => state.fxOn[3])).toBe(false);
   await page.click('.rrow[data-eng="delay"] .rname');
-  expect(await page.evaluate(() => [...document.querySelectorAll('.rrow[data-eng="delay"] .rmore .kn')].filter(k => k.offsetParent).length)).toBe(2);
+  expect(await page.evaluate(() => [...document.querySelectorAll('.rrow[data-eng="delay"] .rmore .kn')].filter(k => k.offsetParent).length)).toBe(1);   // Tone
   await page.click('#rackDone');
   const b0 = await page.evaluate(() => state.B.filter((_, i) => !DEFS[i].single).join());
   await page.click('[data-spre="A"]'); await page.locator('.menu .mitem', { hasText: 'Acid Line' }).click();
@@ -255,4 +256,30 @@ test('the FX rack: every effect\'s On / Off and knobs; a built-in side preset lo
   expect(await page.evaluate(() => state.B.filter((_, i) => !DEFS[i].single).join())).toBe(b0);
   // the harmonic table: any note, its right neighbour (a major third) and its upper-right one (a fifth)
   expect(await page.evaluate(() => { kbHarm = true; const a = gridNote(0, 0, true), b = gridNote(1, 0, true), c = gridNote(0, 1, true); return [b.off - a.off, c.off - a.off]; })).toEqual([4, 7]);
+});
+
+test('a side preset never changes which table a side reads, so the other end of the morph is untouched; Swing and Gate reach the engine', async ({ page }) => {
+  await openSynth(page, { dev: false });
+  const render = () => page.evaluate(() => { const c = T.current(); return Array.from(T.render({ patch: c.patch, tables: c.tables, morph: 1, seconds: 0.3, events: [{ t: 0, type: 'on', note: 60 }] }).L.slice(0, 6000)).map(x => +x.toFixed(6)).join(); });
+  await page.click('[data-spre="B"]'); await page.locator('.menu .mitem', { hasText: 'Warm Pad' }).click();
+  expect(await page.evaluate(() => [state.A[oi(0, 'wave')], state.B[oi(0, 'wave')]])).toEqual([0, 1]);
+  const atB = await render();
+  await page.click('[data-spre="A"]'); await page.locator('.menu .mitem', { hasText: 'Acid Line' }).click();
+  expect(await render()).toBe(atB);   // full B sounds the same whatever A holds
+  // Swing delays every second sixteenth; Gate shortens the notes
+  const r = await page.evaluate(() => {
+    const defs = DEFS.map(({ id, key, min, max, curve, snap, kind, slot, eng }) => ({ id, key, min, max, curve, snap: !!snap, kind, slot, eng }));
+    const run = (swing, gate) => { const e = new MorphEngine(48000, defs); const A = state.A.slice(); A[IX.sqswing] = norm(DEFS[IX.sqswing], swing); A[IX.sqgate] = norm(DEFS[IX.sqgate], gate);
+      e.handle({ type: 'state', A, B: A, C: state.C, morph: 0 }); e.handle({ type: 'bpm', v: 120 });
+      e.handle({ type: 'seq', seq: { events: [0, 12, 24, 36].map(t => ({ tick: t, thr: 0.5, a: { p: 60, v: 1, l: 12 }, b: { p: 60, v: 1, l: 12 } })), loop: 48, scale: { shared: Array(12).fill(true), change: Array(12).fill(null) } } });
+      e.handle({ type: 'seqPlay', on: true });
+      const on = [], off = []; const o1 = e.noteOn.bind(e), o2 = e.noteOff.bind(e); let n = 0;
+      e.noteOn = (a, b) => { on.push(n); o1(a, b); }; e.noteOff = a => { off.push(n); o2(a); };
+      const L = new Float32Array(128), R = new Float32Array(128);
+      for (; n < 24000; n += 128) { L.fill(0); R.fill(0); e.render(L, R, 128); }
+      return { on, off }; };
+    const straight = run(0.5, 0.9), swung = run(0.75, 0.9), short = run(0.5, 0.3);
+    return { second: swung.on[1] - straight.on[1], first: swung.on[0] - straight.on[0], shorter: short.off[0] < straight.off[0] };
+  });
+  expect(r.first).toBe(0); expect(r.second).toBeGreaterThan(2000); expect(r.shorter).toBe(true);   // half a sixteenth at 120 bpm is 3000 samples
 });

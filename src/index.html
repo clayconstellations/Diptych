@@ -45,23 +45,18 @@
 </header>
 
 <nav class="tabs" role="tablist" aria-label="Sections">
-  <button type="button" class="key tab" role="tab" data-tab="synth" aria-selected="false">Synth</button><button type="button" class="key tab" role="tab" data-tab="amp" aria-selected="false">Amp</button><button type="button" class="key tab" role="tab" data-tab="filt" aria-selected="false">Filt</button><button type="button" class="key tab" role="tab" data-tab="fx" aria-selected="false">FX</button><button type="button" class="key tab" role="tab" data-tab="seq" aria-selected="false">Seq</button><button type="button" class="key tab" role="tab" data-tab="play" aria-selected="false">Keys</button>
+  <button type="button" class="key tab" role="tab" data-tab="synth" aria-selected="false">Synth</button><button type="button" class="key tab" role="tab" data-tab="amp" aria-selected="false">Amp</button><button type="button" class="key tab" role="tab" data-tab="fx" aria-selected="false">FX</button><button type="button" class="key tab" role="tab" data-tab="seq" aria-selected="false">Seq</button><button type="button" class="key tab" role="tab" data-tab="play" aria-selected="false">Keys</button>
 </nav>
 <div class="panels" id="panels">
   <section class="panel" data-panel="synth" role="tabpanel" aria-label="Synth">
     <div class="ptop"><div class="pctl"><h2 class="ph">Synth<button type="button" class="lock plock" data-panellock="synth" aria-pressed="false"></button></h2></div><div class="dbox" data-scope="synth"></div></div>
-    <div class="pviz"><canvas id="scope" aria-label="Wave display: the wave you hear now"></canvas></div>
+    <div class="pviz pviz2"><canvas id="scope" aria-label="Wave display: the wave you hear now"></canvas><canvas id="filtviz" aria-label="Filter: the cutoff over a held note, side A, side B and what you hear now"></canvas></div>
     <div class="knobs" id="pk_synth"></div>
   </section>
   <section class="panel" data-panel="amp" role="tabpanel" aria-label="Amp">
     <div class="ptop"><div class="pctl"><h2 class="ph">Amp<button type="button" class="lock plock" data-panellock="amp" aria-pressed="false"></button></h2></div><div class="dbox" data-scope="amp"></div></div>
     <div class="pviz"><canvas id="envviz" aria-label="Amp envelope: side A, side B and what you hear now"></canvas></div>
     <div class="knobs" id="pk_amp"></div>
-  </section>
-  <section class="panel" data-panel="filt" role="tabpanel" aria-label="Filt">
-    <div class="ptop"><div class="pctl"><h2 class="ph">Filt<button type="button" class="lock plock" data-panellock="filt" aria-pressed="false"></button></h2></div><div class="dbox" data-scope="filt"></div></div>
-    <div class="pviz"><canvas id="filtviz" aria-label="Filter: the cutoff over a held note, side A, side B and what you hear now"></canvas></div>
-    <div class="knobs" id="pk_filt"></div>
   </section>
   <section class="panel" data-panel="fx" role="tabpanel" aria-label="FX">
     <div class="ptop"><div class="pctl"><h2 class="ph">FX<button type="button" class="lock plock" data-panellock="fx" aria-pressed="false"></button></h2></div><div class="dbox" data-scope="fx"></div></div>
@@ -175,41 +170,15 @@
     <div class="edhead">
       <h2 id="sqTitle">Sequences</h2>
       <span class="spacer"></span>
+      <button type="button" class="key icon" id="sqHelpBtn" aria-expanded="false" aria-label="How the editor works">?</button>
       <button type="button" id="sqDone">Done</button>
     </div>
-    <div class="edrow"><button type="button" class="pill" id="sqSide" role="switch" aria-checked="false" aria-label="Side being edited: A or B"><span>Side A</span><span>Side B</span></button></div>
-    <div class="sqset sqside">
-      <div class="edrow">
-        <label>Rate <select id="sqRate"></select></label>
-        <span class="opt"><span class="lbl">Steps</span><button type="button" id="sqLenDn" aria-label="Fewer steps">−</button><b id="sqLen">16</b><button type="button" id="sqLenUp" aria-label="More steps">+</button></span>
-      </div>
-      <div class="edrow">
-        <span class="opt"><span class="lbl">Density</span><input type="range" id="sqDens" min="0" max="100" value="100" aria-label="Density"><b id="sqDensVal">100%</b></span>
-        <span class="opt"><span class="lbl">Shift</span><button type="button" id="sqLeft" aria-label="Shift pattern one step earlier">←</button><button type="button" id="sqRight" aria-label="Shift pattern one step later">→</button></span>
-      </div>
-      <div class="edrow">
-        <span class="lbl">Generator</span>
-        <button type="button" class="pill" id="genPill" role="switch" aria-checked="false" aria-label="Generator: arp or riff"><span>Arp</span><span>Riff</span></button>
-        <button type="button" id="sqGen">Generate</button>
-      </div>
-      <div class="edrow" id="arpRow">
-        <select id="sqChord" aria-label="Chord"></select>
-        <select id="sqMode" aria-label="Arp order"></select>
-        <select id="sqOct" aria-label="Octaves"><option value="1">1 oct</option><option value="2" selected>2 oct</option><option value="3">3 oct</option></select>
-      </div>
-      <div class="edrow" id="riffRow" hidden>
-        <select id="rfStyle" aria-label="Riff style"><option>Motif</option><option>Pedal</option><option>Cells</option></select>
-        <select id="rfOct" aria-label="Range"><option value="1">1 oct</option><option value="2" selected>2 oct</option></select>
-        <span class="opt"><span class="lbl">Syncopation</span><input type="range" id="rfSync" min="0" max="100" value="50" aria-label="Syncopation"></span>
-      </div>
-      <div class="edrow">
-        <span class="lbl">Random</span>
-        <button type="button" id="rzNotes">Notes</button>
-        <button type="button" id="rzVel">Velocity</button>
-        <button type="button" id="rzRate">Rate</button>
-        <button type="button" id="rzArp">Generator</button>
-        <button type="button" id="rzAll">All</button>
-      </div>
+    <div class="edrow sqstrip">
+      <button type="button" class="pill" id="sqSide" role="switch" aria-checked="false" aria-label="Side being edited: A or B"><span>Side A</span><span>Side B</span></button>
+      <select id="sqRate" aria-label="Rate"></select>
+      <span class="opt"><button type="button" id="sqLenDn" aria-label="Fewer steps">−</button><b id="sqLen">16</b><button type="button" id="sqLenUp" aria-label="More steps">+</button></span>
+      <span class="opt"><button type="button" id="sqLeft" aria-label="Shift pattern one step earlier">←</button><button type="button" id="sqRight" aria-label="Shift pattern one step later">→</button></span>
+      <button type="button" id="sqGenOpen">Generate</button>
     </div>
     <canvas id="roll" aria-label="Piano roll: tap to add or remove notes, drag a note sideways to change its length"></canvas>
     <canvas id="velCv" aria-label="Velocity: drag to set how hard each step plays"></canvas>
@@ -217,7 +186,36 @@
       <button type="button" id="sqClear">Clear</button>
       <button type="button" id="sqOther">Copy to B</button>
     </div>
-    <p class="ednote">Scale is shared by both sides; everything in the lower box belongs to the side you pick. Steps are always sixteenths; the rate places notes over them, and a note that runs past the end is cut short. Mixed gives every note its own length. Density thins notes out in an even but irregular order and brings the same ones back as you raise it. The Riff generator builds motifs with answers, pedal-tone riffs, or grouped rhythmic cells, with Syncopation pushing notes off the beat. Notes never overlap: a long note stops where the next one starts. Tap an empty cell to add a note, or drag across to paint several. Tap a note to remove it, or drag it sideways to change its length. Random Notes writes a new melody in the scale, Velocity re-rolls how hard notes play, Rate picks a new rate, Generator picks new generator settings and generates, and All does all of these plus density.</p>
+    <p class="ednote" id="sqHelp" hidden>The strip sets the side you edit, the rate that places notes over the sixteenth grid, the number of steps, and shifts the pattern a step. Tap an empty cell to add a note, or drag across to paint several. Tap a note to remove it, or drag it sideways to change its length. Notes never overlap: a long note stops where the next one starts. The lane below sets how hard each step plays. Generate opens the Arp and Riff generators and the random tools. Key, Density, Octave, Swing and Gate are on the Seq tab.</p>
+    <span hidden><input type="range" id="sqDens" min="0" max="100" value="100" aria-label="Density"><b id="sqDensVal">100%</b></span>
+  </div>
+</div>
+
+<div class="sheet" id="genSheet" role="dialog" aria-modal="true" aria-labelledby="genTitle" hidden>
+  <div class="sheetcard">
+    <div class="edhead"><h2 id="genTitle">Generate</h2><button type="button" class="key" id="genDone">Done</button></div>
+    <div class="edrow">
+      <button type="button" class="pill" id="genPill" role="switch" aria-checked="false" aria-label="Generator: arp or riff"><span>Arp</span><span>Riff</span></button>
+      <span class="spacer"></span>
+      <button type="button" id="sqGen">Generate</button>
+    </div>
+    <div class="edrow" id="arpRow">
+      <select id="sqChord" aria-label="Chord"></select>
+      <select id="sqMode" aria-label="Arp order"></select>
+      <select id="sqOct" aria-label="Octaves"><option value="1">1 oct</option><option value="2" selected>2 oct</option><option value="3">3 oct</option></select>
+    </div>
+    <div class="edrow" id="riffRow" hidden>
+      <select id="rfStyle" aria-label="Riff style"><option>Motif</option><option>Pedal</option><option>Cells</option></select>
+      <select id="rfOct" aria-label="Range"><option value="1">1 oct</option><option value="2" selected>2 oct</option></select>
+      <span class="opt"><span class="lbl">Syncopation</span><input type="range" id="rfSync" min="0" max="100" value="50" aria-label="Syncopation"></span>
+    </div>
+    <div class="setrow"><span class="lbl">Random</span><div class="edrow">
+      <button type="button" id="rzNotes">Notes</button>
+      <button type="button" id="rzVel">Velocity</button>
+      <button type="button" id="rzRate">Rate</button>
+      <button type="button" id="rzArp">Generator</button>
+      <button type="button" id="rzAll">All</button>
+    </div></div>
   </div>
 </div>
 

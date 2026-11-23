@@ -103,6 +103,10 @@ FILTER.forEach(p => DEFS.push({ ...p, id: p.key, group:'Filter' }));
 ENVS.forEach(([group, ps]) => ps.forEach(p => DEFS.push({ ...p, id: p.key, group })));
 FX_KIND.forEach((eng, s) => FX_ENG[eng].forEach(p => DEFS.push({ ...p, id: p.key, group: FX_NAMES[s], kind:'fx', slot:s, eng })));
 DEFS.push({ ...P_('pattern', 'Pattern', 0, 1, 'lin', 0, 1), id:'pattern', group:'Sequencer' });
+/* Swing and Gate (2026-11-23): ordinary morphing parameters the engine's sequencer reads as it plays. Swing delays every
+   second sixteenth (50% straight, 66% a triplet feel, 75% the most); Gate is how much of its length each note sounds. */
+DEFS.push({ ...P_('sqswing', 'Swing', 0.5, 0.75, 'lin', 0.5, 0.5), id:'sqswing', group:'Sequencer' });
+DEFS.push({ ...P_('sqgate', 'Gate', 0.1, 1, 'lin', 0.92, 0.92), id:'sqgate', group:'Sequencer' });
 /* Broad sequencer controls (2026-11-06), one setting per side (seq: a side's own setting, shown with A and B handles
    but no morph curve; the Pattern knob does the morphing): Density thins or fills the notes, Speed plays the pattern
    at half, normal or double speed, Octave moves it down or up. The sequencer model reads them (sequencer/model.js). */
@@ -115,7 +119,7 @@ const time = v => (v < 0.9995 ? Math.round(v * 1000) + ' ms' : v.toFixed(2) + ' 
 const pct = v => Math.round(v * 100) + '%';
 const FM_RATIOS = [0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];   // OscFM.RATIOS
 const FMT = {
-  wpos: pct, menv: pct, mbright: pct, mfx: pct, mwet: pct, harm: pct,
+  sqswing: pct, sqgate: pct, wpos: pct, menv: pct, mbright: pct, mfx: pct, mwet: pct, harm: pct,
   sqdens: pct, sqspeed: v => ['½×', '1×', '2×'][v], sqoct: v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + ' oct',
   fmx: v => (v < 0.005 ? 'All A' : v > 0.995 ? 'All B' : Math.round(v * 100) + '% B'),
   fpitch: v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + ' st',

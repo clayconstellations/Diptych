@@ -8,8 +8,9 @@
    there and has no rack). The FX dice still roll everything.
    ===================================================================== */
 var rackOpen = false;
-const RACK_KEYS = { drive: ['dmix', 'drive', 'dshape'], formant: ['fmix', 'fvowel', 'freso'], mod: ['mmix', 'mtype', 'mrate'], delay: ['dlmix', 'dltime', 'dlfb'],
-  reverb: ['rvmix', 'rvsize', 'rvdecay'], lofi: ['lchar', 'lwow', 'lnmix'], ott: ['ottdepth', 'otttime'] };
+// Drive, Modulation, Delay and Reverb have their Mix on the FX panel itself (2026-11-23)
+const RACK_KEYS = { drive: ['drive', 'dshape'], formant: ['fmix', 'fvowel', 'freso'], mod: ['mtype', 'mrate', 'mdepth'], delay: ['dltime', 'dlfb', 'dlpp'],
+  reverb: ['rvsize', 'rvdecay', 'rvdamp'], lofi: ['lchar', 'lwow', 'lnmix'], ott: ['ottdepth', 'otttime'] };
 function updateRack() { document.querySelectorAll('[data-rackfx]').forEach(p => setPill(p, state.fxOn[+p.dataset.rackfx] ? 0 : 1)); }
 if (!devView) {
   const rack = $('fxRack'), rows = $('rackRows');
@@ -18,7 +19,7 @@ if (!devView) {
     row.innerHTML = `<div class="rhead"><button type="button" class="key rname" aria-expanded="false">${FX_NAMES[s]}</button><button type="button" class="pill" id="rackFx${s}" data-rackfx="${s}" role="switch" aria-label="${FX_NAMES[s]} on or off"><span>On</span><span>Off</span></button></div><div class="knobs rknobs"></div><div class="knobs rmore" hidden></div>`;
     rows.appendChild(row);
     const main = row.querySelector('.rknobs'), more = row.querySelector('.rmore');
-    DEFS.forEach((d, i) => { if (d.kind !== 'fx' || d.slot !== s || d.opts) return; const kn = $('k' + i).closest('.kn'); kn.classList.remove('adv'); (RACK_KEYS[eng].includes(d.key) ? main : more).appendChild(kn); });
+    DEFS.forEach((d, i) => { if (d.kind !== 'fx' || d.slot !== s || d.opts) return; const kn = $('k' + i).closest('.kn'); if (kn.closest('#pk_fx')) return; kn.classList.remove('adv'); (RACK_KEYS[eng].includes(d.key) ? main : more).appendChild(kn); });
     RACK_KEYS[eng].forEach(k => main.appendChild($('k' + IX[k]).closest('.kn')));   // in the listed order
     const name = row.querySelector('.rname');
     if (!more.children.length) name.disabled = true;

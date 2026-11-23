@@ -5,7 +5,8 @@ const rnd = Math.random;
 const logr = (lo, hi) => lo * Math.pow(hi / lo, rnd());
 const RND = {
   // macros: Envelope picks where each side sits between pluck and pad; the others start at 50% ("as generated")
-  menv: () => rnd(), mbright: () => 0.5, mfx: () => 0.5, mwet: () => 0.5,
+  menv: () => 0.5, mbright: () => 0.5,   // the Envelope macro left the player's view (2026-11-23): it rests at 50% and the amp envelope itself is rolled
+  sqswing: () => (rnd() < 0.6 ? 0.5 : 0.5 + rnd() * 0.17), sqgate: () => 0.45 + rnd() * 0.55, mfx: () => 0.5, mwet: () => 0.5,
   harm: () => (rnd() < 0.7 ? 1 : 0.6 + rnd() * 0.4),
   // FM: Patch is locked at full range by default, like Wave; each side's patch comes from fmPatch (archetypes)
   fmx: side => (side === 'A' ? 0 : 1), fpitch: () => { const r = rnd(); return r < 0.15 ? -12 : r > 0.85 ? 12 : 0; },
@@ -41,10 +42,10 @@ const RND = {
   fsus: () => rnd(),
   frel: () => logr(0.02, 3),
   // the amp envelope is a medium shape with some variety: the Envelope macro takes it to a pluck or a pad (2026-11-06)
-  aatk: () => logr(0.002, 0.02),
-  adec: () => logr(0.4, 1.2),
-  asus: () => 0.4 + rnd() * 0.35,
-  arel: () => logr(0.2, 0.6),
+  aatk: () => logr(0.001, rnd() < 0.65 ? 0.03 : 1.5),   // mostly quick, a third of the time a swell
+  adec: () => logr(0.1, 3),
+  asus: () => (rnd() < 0.3 ? rnd() * 0.25 : 0.3 + rnd() * 0.7),   // plucks three times in ten
+  arel: () => logr(0.06, 3),
   level: () => 0.5 + rnd() * 0.5,
   pan: () => (rnd() * 2 - 1) * 0.6,
   // effects: settings over the full range (the synth is meant to surprise); every effect is always in the chain, so each
@@ -125,7 +126,7 @@ const rv = (d, side) => quant(d, clamp(norm(d, RND[d.key](side, d))));
 // both sides at 0 is fine for them. The rule would otherwise re-roll away their stated odds.
 const SPREAD = 0.15, NO_SPREAD = new Set(['lnmix', 'ottgl', 'ottgm', 'ottgh', 'fmix', 'mmix', 'dlmix', 'rvmix', 'lwow', 'lflut', 'lcodec', 'ldrop',
   'glide', 'unison', 'vdepth', 'vrfade', 'mode', 'byp', 'opan', 'soct', 'sstart', 'strack', 'olevel', 'dmix', 'ottdepth', 'lchar', 'sloop', 'dlspill',
-  'mbright', 'mfx', 'mwet', 'harm', 'aatk', 'adec', 'asus', 'arel', 'fpitch']);   // 2026-11-06: the Envelope macro now sets A and B apart
+  'mbright', 'mfx', 'mwet', 'menv', 'sqswing', 'sqgate', 'harm', 'aatk', 'adec', 'asus', 'arel', 'fpitch']);   // 2026-11-06: the Envelope macro now sets A and B apart
 function rvApart(d, side, other) {
   if (NO_SPREAD.has(d.key)) return rv(d, side);
   for (let k = 0; k < 12; k++) { const x = rv(d, side); if (Math.abs(x - other) >= SPREAD) return x; }

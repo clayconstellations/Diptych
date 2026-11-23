@@ -215,3 +215,12 @@ function capturePattern(side, noUndo) {
   if (ready) sendState();
   refreshSeqKnobs(); updateKnob(IX.pattern); if (sq.classList.contains('open')) syncSeqControls(); seqChanged();
 }
+
+/* The editor's layout (2026-11-23): the roll comes first under one strip (side, rate, steps, shift, Generate); the
+   generators and random tools are a sheet that closes once it has made something; the help is behind "?". */
+const closeGen = () => { $('genSheet').hidden = true; };
+$('sqGenOpen').addEventListener('click', () => { $('genSheet').hidden = false; $('genDone').focus({ preventScroll: true }); });
+$('genDone').addEventListener('click', closeGen);
+$('genSheet').addEventListener('click', e => { if (e.target === $('genSheet') || e.target.closest('#sqGen, #rzNotes, #rzVel, #rzRate, #rzArp, #rzAll')) closeGen(); });
+$('sqHelpBtn').addEventListener('click', () => { const h = $('sqHelp'); h.hidden = !h.hidden; $('sqHelpBtn').setAttribute('aria-expanded', String(!h.hidden)); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('genSheet').hidden) closeGen(); });

@@ -445,7 +445,7 @@ body:not(.dev) .kwrap .icons{display:none}
 /* the developer view keeps one Wavetable (2026-11-10): the other oscillators are silent and hidden */
 .group[data-kind="osc"]:not([data-slot="0"]){display:none}
 /* tabs: Synth, Amp, Filt, FX, Seq, Play */
-.tabs{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;padding:0 14px 8px;max-width:780px;margin:0 auto;width:100%}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:0 14px 8px;max-width:780px;margin:0 auto;width:100%}
 .tab{min-height:34px;font-size:.66rem;padding:4px 0;letter-spacing:.06em}
 .tab[aria-selected="true"]{background:var(--hold);color:var(--on-ink)}
 /* panels: controls top left, dice top right (the same place on every tab), the picture the full width, knobs below */
@@ -705,13 +705,9 @@ select{font-size:.8rem}
 /* a side in focus: the other side's key and the MORPH block grey out (they still work: tap either to leave or switch) */
 body[data-sidefocus="A"] .letter.b,body[data-sidefocus="B"] .letter.a{color:var(--muted)!important;filter:grayscale(1);opacity:.55}
 .morph-slider.rest .mcap{color:var(--muted);background:var(--well);opacity:.75}
-/* selections and actions: actions are raised keys that press in; selections (tabs, pills, colourways) are flat segments
-   that light in yellow, so nothing that is merely "on" looks pressed */
-.tab,.pill,.scheme{box-shadow:none;background:var(--well);border:1.5px solid var(--k);margin:0 4px 4px 0}
-.tab.down,.pill.down,.scheme.down{transform:none}
+/* selections (tabs, pills, colourways) are raised keys like the rest (the owner preferred the 3D look, 2026-11-23); the
+   one that is on is yellow and stays level */
 .tab[aria-selected="true"],.scheme[aria-pressed="true"]{background:var(--hold);color:var(--on-ink)}
-.pill span.on{background:var(--hold);color:var(--on-ink)}
-.vivid .tab[aria-selected="false"]{background:var(--well)}
 /* 3rd / 4th / 5th: equal boxes */
 #rowPill span{min-width:54px;justify-content:center}
 /* lock and link icons on the panels' knobs; section padlocks in the panel titles */
@@ -745,6 +741,40 @@ body:not(.dev) .panel .kwrap .icons{display:flex}
 .desk:not(.dev) .panel[data-panel="seq"] .knobs{padding-right:150px}
 .desk:not(.dev) .panel[data-panel="seq"] .pfoot{flex-direction:column;align-items:flex-end;gap:2px}
 .desk:not(.dev) .panel[data-panel="seq"] .pfoot .spacer{display:none}
+
+/* ===== ninth pass (2026-11-23): five tabs, more knobs ===== */
+/* Synth's picture: the wave and the filter's sweep side by side */
+.pviz2{flex-direction:row;gap:6px}
+.pviz2 canvas{flex:1 1 0;min-width:0;width:auto;height:100%}
+.pviz{min-height:96px}
+/* phones: Synth has two rows of four knobs, FX the two macros then four mixes, Seq five across */
+body:not(.desk) #pk_synth,body:not(.desk) #pk_fx{grid-auto-flow:row;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px 2px}
+body:not(.desk) #pk_fx .kn:nth-child(3){grid-column-start:1}
+body:not(.desk) #pk_synth .knob,body:not(.desk) #pk_fx .knob,body:not(.desk) #pk_amp .knob{width:58px;height:58px}
+body:not(.desk) #pk_seq .knob{width:52px;height:52px}
+body:not(.desk) .panel .kname{font-size:.58rem;letter-spacing:.06em}
+body:not(.desk) .panel .kab{font-size:.6rem}
+/* desktop: Synth spans two columns with its eight knobs in one row; Amp beside it; FX, Seq and Keys below */
+.desk:not(.dev) .panel[data-panel="synth"]{grid-column:span 2}
+.desk:not(.dev) #pk_seq .knob{width:44px;height:44px}
+.desk:not(.dev) #pk_seq .kname{font-size:.56rem;letter-spacing:.02em}
+.desk:not(.dev) #pk_fx .knob{width:50px;height:50px}
+.desk.dev .panels{grid-template-columns:2fr 1fr 1.4fr 1.4fr 1fr}
+/* the sequence editor: one strip, then the roll */
+.sqstrip{gap:6px 8px}
+.sqstrip .opt{gap:4px}
+.sqstrip .opt b{font-family:var(--font-mono);min-width:1.6em;text-align:center}
+#genSheet .sheetcard{gap:12px}
+#sqHelpBtn{font-family:var(--font-head);font-size:.95rem}
+/* desktop Seq: five knobs across the full width, Walk / Swap and Edit in a row below; FX: six knobs with tighter labels */
+.desk:not(.dev) .panel[data-panel="seq"] .knobs{padding-right:0}
+.desk:not(.dev) .panel[data-panel="seq"] .pfoot{flex-direction:row;align-items:center}
+.desk:not(.dev) .panel[data-panel="seq"] .pfoot .spacer{display:block}
+.desk:not(.dev) .panel[data-panel="seq"] .pviz{min-height:54px}
+.desk:not(.dev) .panel[data-panel="seq"] .ptop .dicetrack{height:46px}
+.desk:not(.dev) #pk_seq .kval{font-size:.62rem}
+.desk:not(.dev) #pk_fx .kname{font-size:.54rem;letter-spacing:0}
+body:not(.desk) #pk_seq .kval{font-size:.6rem;padding:1px 0}
 </style>
 </head>
 <body>
@@ -771,23 +801,18 @@ body:not(.dev) .panel .kwrap .icons{display:flex}
 </header>
 
 <nav class="tabs" role="tablist" aria-label="Sections">
-  <button type="button" class="key tab" role="tab" data-tab="synth" aria-selected="false">Synth</button><button type="button" class="key tab" role="tab" data-tab="amp" aria-selected="false">Amp</button><button type="button" class="key tab" role="tab" data-tab="filt" aria-selected="false">Filt</button><button type="button" class="key tab" role="tab" data-tab="fx" aria-selected="false">FX</button><button type="button" class="key tab" role="tab" data-tab="seq" aria-selected="false">Seq</button><button type="button" class="key tab" role="tab" data-tab="play" aria-selected="false">Keys</button>
+  <button type="button" class="key tab" role="tab" data-tab="synth" aria-selected="false">Synth</button><button type="button" class="key tab" role="tab" data-tab="amp" aria-selected="false">Amp</button><button type="button" class="key tab" role="tab" data-tab="fx" aria-selected="false">FX</button><button type="button" class="key tab" role="tab" data-tab="seq" aria-selected="false">Seq</button><button type="button" class="key tab" role="tab" data-tab="play" aria-selected="false">Keys</button>
 </nav>
 <div class="panels" id="panels">
   <section class="panel" data-panel="synth" role="tabpanel" aria-label="Synth">
     <div class="ptop"><div class="pctl"><h2 class="ph">Synth<button type="button" class="lock plock" data-panellock="synth" aria-pressed="false"></button></h2></div><div class="dbox" data-scope="synth"></div></div>
-    <div class="pviz"><canvas id="scope" aria-label="Wave display: the wave you hear now"></canvas></div>
+    <div class="pviz pviz2"><canvas id="scope" aria-label="Wave display: the wave you hear now"></canvas><canvas id="filtviz" aria-label="Filter: the cutoff over a held note, side A, side B and what you hear now"></canvas></div>
     <div class="knobs" id="pk_synth"></div>
   </section>
   <section class="panel" data-panel="amp" role="tabpanel" aria-label="Amp">
     <div class="ptop"><div class="pctl"><h2 class="ph">Amp<button type="button" class="lock plock" data-panellock="amp" aria-pressed="false"></button></h2></div><div class="dbox" data-scope="amp"></div></div>
     <div class="pviz"><canvas id="envviz" aria-label="Amp envelope: side A, side B and what you hear now"></canvas></div>
     <div class="knobs" id="pk_amp"></div>
-  </section>
-  <section class="panel" data-panel="filt" role="tabpanel" aria-label="Filt">
-    <div class="ptop"><div class="pctl"><h2 class="ph">Filt<button type="button" class="lock plock" data-panellock="filt" aria-pressed="false"></button></h2></div><div class="dbox" data-scope="filt"></div></div>
-    <div class="pviz"><canvas id="filtviz" aria-label="Filter: the cutoff over a held note, side A, side B and what you hear now"></canvas></div>
-    <div class="knobs" id="pk_filt"></div>
   </section>
   <section class="panel" data-panel="fx" role="tabpanel" aria-label="FX">
     <div class="ptop"><div class="pctl"><h2 class="ph">FX<button type="button" class="lock plock" data-panellock="fx" aria-pressed="false"></button></h2></div><div class="dbox" data-scope="fx"></div></div>
@@ -901,41 +926,15 @@ body:not(.dev) .panel .kwrap .icons{display:flex}
     <div class="edhead">
       <h2 id="sqTitle">Sequences</h2>
       <span class="spacer"></span>
+      <button type="button" class="key icon" id="sqHelpBtn" aria-expanded="false" aria-label="How the editor works">?</button>
       <button type="button" id="sqDone">Done</button>
     </div>
-    <div class="edrow"><button type="button" class="pill" id="sqSide" role="switch" aria-checked="false" aria-label="Side being edited: A or B"><span>Side A</span><span>Side B</span></button></div>
-    <div class="sqset sqside">
-      <div class="edrow">
-        <label>Rate <select id="sqRate"></select></label>
-        <span class="opt"><span class="lbl">Steps</span><button type="button" id="sqLenDn" aria-label="Fewer steps">−</button><b id="sqLen">16</b><button type="button" id="sqLenUp" aria-label="More steps">+</button></span>
-      </div>
-      <div class="edrow">
-        <span class="opt"><span class="lbl">Density</span><input type="range" id="sqDens" min="0" max="100" value="100" aria-label="Density"><b id="sqDensVal">100%</b></span>
-        <span class="opt"><span class="lbl">Shift</span><button type="button" id="sqLeft" aria-label="Shift pattern one step earlier">←</button><button type="button" id="sqRight" aria-label="Shift pattern one step later">→</button></span>
-      </div>
-      <div class="edrow">
-        <span class="lbl">Generator</span>
-        <button type="button" class="pill" id="genPill" role="switch" aria-checked="false" aria-label="Generator: arp or riff"><span>Arp</span><span>Riff</span></button>
-        <button type="button" id="sqGen">Generate</button>
-      </div>
-      <div class="edrow" id="arpRow">
-        <select id="sqChord" aria-label="Chord"></select>
-        <select id="sqMode" aria-label="Arp order"></select>
-        <select id="sqOct" aria-label="Octaves"><option value="1">1 oct</option><option value="2" selected>2 oct</option><option value="3">3 oct</option></select>
-      </div>
-      <div class="edrow" id="riffRow" hidden>
-        <select id="rfStyle" aria-label="Riff style"><option>Motif</option><option>Pedal</option><option>Cells</option></select>
-        <select id="rfOct" aria-label="Range"><option value="1">1 oct</option><option value="2" selected>2 oct</option></select>
-        <span class="opt"><span class="lbl">Syncopation</span><input type="range" id="rfSync" min="0" max="100" value="50" aria-label="Syncopation"></span>
-      </div>
-      <div class="edrow">
-        <span class="lbl">Random</span>
-        <button type="button" id="rzNotes">Notes</button>
-        <button type="button" id="rzVel">Velocity</button>
-        <button type="button" id="rzRate">Rate</button>
-        <button type="button" id="rzArp">Generator</button>
-        <button type="button" id="rzAll">All</button>
-      </div>
+    <div class="edrow sqstrip">
+      <button type="button" class="pill" id="sqSide" role="switch" aria-checked="false" aria-label="Side being edited: A or B"><span>Side A</span><span>Side B</span></button>
+      <select id="sqRate" aria-label="Rate"></select>
+      <span class="opt"><button type="button" id="sqLenDn" aria-label="Fewer steps">−</button><b id="sqLen">16</b><button type="button" id="sqLenUp" aria-label="More steps">+</button></span>
+      <span class="opt"><button type="button" id="sqLeft" aria-label="Shift pattern one step earlier">←</button><button type="button" id="sqRight" aria-label="Shift pattern one step later">→</button></span>
+      <button type="button" id="sqGenOpen">Generate</button>
     </div>
     <canvas id="roll" aria-label="Piano roll: tap to add or remove notes, drag a note sideways to change its length"></canvas>
     <canvas id="velCv" aria-label="Velocity: drag to set how hard each step plays"></canvas>
@@ -943,7 +942,36 @@ body:not(.dev) .panel .kwrap .icons{display:flex}
       <button type="button" id="sqClear">Clear</button>
       <button type="button" id="sqOther">Copy to B</button>
     </div>
-    <p class="ednote">Scale is shared by both sides; everything in the lower box belongs to the side you pick. Steps are always sixteenths; the rate places notes over them, and a note that runs past the end is cut short. Mixed gives every note its own length. Density thins notes out in an even but irregular order and brings the same ones back as you raise it. The Riff generator builds motifs with answers, pedal-tone riffs, or grouped rhythmic cells, with Syncopation pushing notes off the beat. Notes never overlap: a long note stops where the next one starts. Tap an empty cell to add a note, or drag across to paint several. Tap a note to remove it, or drag it sideways to change its length. Random Notes writes a new melody in the scale, Velocity re-rolls how hard notes play, Rate picks a new rate, Generator picks new generator settings and generates, and All does all of these plus density.</p>
+    <p class="ednote" id="sqHelp" hidden>The strip sets the side you edit, the rate that places notes over the sixteenth grid, the number of steps, and shifts the pattern a step. Tap an empty cell to add a note, or drag across to paint several. Tap a note to remove it, or drag it sideways to change its length. Notes never overlap: a long note stops where the next one starts. The lane below sets how hard each step plays. Generate opens the Arp and Riff generators and the random tools. Key, Density, Octave, Swing and Gate are on the Seq tab.</p>
+    <span hidden><input type="range" id="sqDens" min="0" max="100" value="100" aria-label="Density"><b id="sqDensVal">100%</b></span>
+  </div>
+</div>
+
+<div class="sheet" id="genSheet" role="dialog" aria-modal="true" aria-labelledby="genTitle" hidden>
+  <div class="sheetcard">
+    <div class="edhead"><h2 id="genTitle">Generate</h2><button type="button" class="key" id="genDone">Done</button></div>
+    <div class="edrow">
+      <button type="button" class="pill" id="genPill" role="switch" aria-checked="false" aria-label="Generator: arp or riff"><span>Arp</span><span>Riff</span></button>
+      <span class="spacer"></span>
+      <button type="button" id="sqGen">Generate</button>
+    </div>
+    <div class="edrow" id="arpRow">
+      <select id="sqChord" aria-label="Chord"></select>
+      <select id="sqMode" aria-label="Arp order"></select>
+      <select id="sqOct" aria-label="Octaves"><option value="1">1 oct</option><option value="2" selected>2 oct</option><option value="3">3 oct</option></select>
+    </div>
+    <div class="edrow" id="riffRow" hidden>
+      <select id="rfStyle" aria-label="Riff style"><option>Motif</option><option>Pedal</option><option>Cells</option></select>
+      <select id="rfOct" aria-label="Range"><option value="1">1 oct</option><option value="2" selected>2 oct</option></select>
+      <span class="opt"><span class="lbl">Syncopation</span><input type="range" id="rfSync" min="0" max="100" value="50" aria-label="Syncopation"></span>
+    </div>
+    <div class="setrow"><span class="lbl">Random</span><div class="edrow">
+      <button type="button" id="rzNotes">Notes</button>
+      <button type="button" id="rzVel">Velocity</button>
+      <button type="button" id="rzRate">Rate</button>
+      <button type="button" id="rzArp">Generator</button>
+      <button type="button" id="rzAll">All</button>
+    </div></div>
   </div>
 </div>
 
@@ -1267,17 +1295,20 @@ class MorphEngine {
     const S = this.seq, adv = this.bpm / 60 * 48 / this.sr * len, endT = this.stick + adv;
     for (let k = this.offs.length - 1; k >= 0; k--) if (this.offs[k].at <= endT) { this.noteOff(this.offs[k].note); this.offs.splice(k, 1); }
     const mm = this.val[this.I.pattern];
+    // Swing: every second sixteenth plays late, by up to half a sixteenth (6 ticks) at 75%; Gate: the share of its length a note sounds
+    const I = this.I, sw = I.sqswing === undefined ? 0 : Math.max(0, Math.min(6, (this.val[I.sqswing] - 0.5) * 24)), gate = I.sqgate === undefined ? 0.92 : this.val[I.sqgate];
+    const tk = ev => ev.tick + ((ev.tick / 12) % 2 === 1 ? sw : 0);
     let from = this.spos, to = from + adv;
     for (;;) {
       const lim = Math.min(to, S.loop);
-      while (this.ei < S.events.length && S.events[this.ei].tick < lim) {
+      while (this.ei < S.events.length && tk(S.events[this.ei]) < lim) {
         const ev = S.events[this.ei++], r = MorphEngine.seqEval(ev, mm, this.walk, S.scale);
         if (!r) continue;
         // monophonic: a new note always ends the one before it
         for (const o of this.offs) if (o.note !== r.note) this.noteOff(o.note);
         this.offs.length = 0;
         this.noteOn(r.note, 0.25 + 0.75 * r.vel);
-        this.offs.push({ note: r.note, at: this.stick + (ev.tick - from) + Math.max(1, r.len * 0.92) });
+        this.offs.push({ note: r.note, at: this.stick + (tk(ev) - from) + Math.max(1, r.len * gate) });
       }
       if (to >= S.loop) { to -= S.loop; from -= S.loop; this.ei = 0; } else break;
     }
@@ -2324,6 +2355,10 @@ FILTER.forEach(p => DEFS.push({ ...p, id: p.key, group:'Filter' }));
 ENVS.forEach(([group, ps]) => ps.forEach(p => DEFS.push({ ...p, id: p.key, group })));
 FX_KIND.forEach((eng, s) => FX_ENG[eng].forEach(p => DEFS.push({ ...p, id: p.key, group: FX_NAMES[s], kind:'fx', slot:s, eng })));
 DEFS.push({ ...P_('pattern', 'Pattern', 0, 1, 'lin', 0, 1), id:'pattern', group:'Sequencer' });
+/* Swing and Gate (2026-11-23): ordinary morphing parameters the engine's sequencer reads as it plays. Swing delays every
+   second sixteenth (50% straight, 66% a triplet feel, 75% the most); Gate is how much of its length each note sounds. */
+DEFS.push({ ...P_('sqswing', 'Swing', 0.5, 0.75, 'lin', 0.5, 0.5), id:'sqswing', group:'Sequencer' });
+DEFS.push({ ...P_('sqgate', 'Gate', 0.1, 1, 'lin', 0.92, 0.92), id:'sqgate', group:'Sequencer' });
 /* Broad sequencer controls (2026-11-06), one setting per side (seq: a side's own setting, shown with A and B handles
    but no morph curve; the Pattern knob does the morphing): Density thins or fills the notes, Speed plays the pattern
    at half, normal or double speed, Octave moves it down or up. The sequencer model reads them (sequencer/model.js). */
@@ -2336,7 +2371,7 @@ const time = v => (v < 0.9995 ? Math.round(v * 1000) + ' ms' : v.toFixed(2) + ' 
 const pct = v => Math.round(v * 100) + '%';
 const FM_RATIOS = [0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];   // OscFM.RATIOS
 const FMT = {
-  wpos: pct, menv: pct, mbright: pct, mfx: pct, mwet: pct, harm: pct,
+  sqswing: pct, sqgate: pct, wpos: pct, menv: pct, mbright: pct, mfx: pct, mwet: pct, harm: pct,
   sqdens: pct, sqspeed: v => ['½×', '1×', '2×'][v], sqoct: v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + ' oct',
   fmx: v => (v < 0.005 ? 'All A' : v > 0.995 ? 'All B' : Math.round(v * 100) + '% B'),
   fpitch: v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + ' st',
@@ -2518,8 +2553,8 @@ function sampleOverview(data, cols = 128) {
 /* ---------- state + persistence ----------
    The fixed architecture (2026-10-17) starts fresh: it saves under a new key and ignores earlier patches, by decision.
    Parameters are matched by id, so patches survive new knobs; list changes need a migration keyed on `ver`. */
-const STORE = 'diptych-v5', STORE_VER = 3;
-const DEFAULT_LOCKS = () => ({ level: true, pan: true, pattern: true, 'o1.wave': true, 'o2.wave': true, 'o4.sample': true, 'o5.fmx': true, ottout: true });
+const STORE = 'diptych-v5', STORE_VER = 4;
+const DEFAULT_LOCKS = () => ({ level: true, pan: true, pattern: true, 'o1.wave': true, 'o2.wave': true, 'o4.sample': true, 'o5.fmx': true, ottout: true, ottdepth: true });   // OTT Depth: on at 50% and locked by default (2026-11-23)
 const DEFAULT_LINKS = () => ({ 'o1.pitch': true, 'o1.fine': true, 'o2.pitch': true, 'o2.fine': true, 'o4.spitch': true, 'o4.sfine': true, 'o5.fpitch': true, ottout: true });
 const DEFAULT_OSCON = () => OSC_KIND.map(() => true);
 const DEFAULT_SMP = () => ({ A: { name: 'Plucked string' }, B: { name: 'Vocal ah' } });   // the Sampler's sample references
@@ -2545,6 +2580,8 @@ const state = {
 };
 const tables = DEFAULT_TABLES();   // tables[slot].A / .B for each Wavetable slot (slots 0 and 1)
 
+// defaults beyond the parameter list (2026-11-23): OTT on at 50% Depth on both sides (locked), and the Seq section locked
+state.A[IX.ottdepth] = state.B[IX.ottdepth] = 0.5; state.panelLocks = { seq: true };
 function enc(f) {
   const i16 = new Int16Array(f.length);
   for (let n = 0; n < f.length; n++) i16[n] = Math.max(-32767, Math.min(32767, Math.round(f[n] * 32767)));
@@ -2583,6 +2620,7 @@ try {
     }
     if (saved.bpm) state.bpm = Math.max(40, Math.min(240, +saved.bpm || 120));
     state.walk = saved.walk !== false;
+    if (!(saved.ver >= 4)) { state.locks.ottdepth = true; state.A[IX.ottdepth] = state.B[IX.ottdepth] = 0.5; state.panelLocks = { ...(state.panelLocks || {}), seq: true }; }   // ver 4: the new defaults
     if (typeof saved.presetName === 'string') state.presetName = saved.presetName;   // the current presets' names (2026-11-11)
     if (saved.sideNames && typeof saved.sideNames === 'object') state.sideNames = { A: String(saved.sideNames.A || ''), B: String(saved.sideNames.B || '') };
     if (Array.isArray(saved.tables)) saved.tables.slice(0, WT_SLOTS.length).forEach((t, s) => {
@@ -2779,7 +2817,7 @@ const knobSVG = (d, i) => `<svg viewBox="0 0 80 80" aria-hidden="false">
 const groupsEl = document.getElementById('groups');
 const knobHTML = (d, i) => `<div class="kn${isBasic(d) ? '' : ' adv'}">
     <div class="kname">${d.label}</div>
-    <div class="kwrap"><div class="knob" id="k${i}">${knobSVG(d, i)}</div>${iconBtn(d.id, d.label, d.single || d.seq || d.pair)}</div>
+    <div class="kwrap"><div class="knob" id="k${i}">${knobSVG(d, i)}</div>${iconBtn(d.id, d.label, d.single)}</div>
     <div class="kval" id="v${i}"></div>
     <div class="kab"><span class="a" id="va${i}"></span><span class="b" id="vb${i}"></span></div>
   </div>`;
@@ -2901,7 +2939,8 @@ function updateKnob(i) {
   $('gl' + i).setAttribute('d', linked || d.seq || d.pair || F ? '' : path);
   { const x = F ? state[F][i] : linked || d.seq || d.pair ? a : r, an = ang(x);
     $('ptr' + i).setAttribute('x1', (CX + 13.5 * Math.cos(an)).toFixed(2)); $('ptr' + i).setAttribute('y1', (CX + 13.5 * Math.sin(an)).toFixed(2));
-    $('ptr' + i).setAttribute('x2', (CX + 19 * Math.cos(an)).toFixed(2)); $('ptr' + i).setAttribute('y2', (CX + 19 * Math.sin(an)).toFixed(2)); }
+    $('ptr' + i).setAttribute('x2', (CX + 19 * Math.cos(an)).toFixed(2)); $('ptr' + i).setAttribute('y2', (CX + 19 * Math.sin(an)).toFixed(2));
+    $('ptr' + i).style.display = F || linked ? '' : 'none'; }   // no pointer while the knob morphs: the dots on the ring say it, and the line crossed the curve (2026-11-23)
   $('gd' + i).setAttribute('cx', (x0 + m * S).toFixed(2)); $('gd' + i).setAttribute('cy', (y0 - gy * S).toFixed(2));
 
   // text
@@ -2952,6 +2991,7 @@ function setParam(side, i, x) {
   if (isLinked(i)) {   // linked or single-side: both sides always hold the same value
     if (state.A[i] === x && state.B[i] === x) return;
     state.A[i] = x; state.B[i] = x;
+    if (DEFS[i].pair) pushPair(i);   // a linked Position moves both tables' positions
     updateKnob(i);
     if (ready) { send({ type:'param', side:'A', i, v:x }); send({ type:'param', side:'B', i, v:x }); }
     drawWaves(); save();
@@ -3060,7 +3100,10 @@ DEFS.forEach((d, i) => { if (!d.opts) bindKnob(i); });
    sequencer's knobs move into the panels (Synth, Amp, Filt, FX, Seq), and the Sound and Sequence cards go away. */
 {
   const put = (box, keys) => keys.forEach(k => $(box).appendChild($('k' + IX[k]).closest('.kn')));
-  put('pk_synth', ['mbright', 'wpos']); put('pk_amp', ['menv']); put('pk_filt', ['cutoff', 'reso', 'envamt']); put('pk_fx', ['mfx', 'mwet']); put('pk_seq', ['pattern', 'sqdens', 'sqoct', 'sqspeed']); $('k' + IX.sqspeed).closest('.kn').style.display = 'none';   // Speed is fixed at 1x and its knob hidden (2026-11-23)
+  put('pk_synth', ['wpos', 'mbright', 'o1.unison', 'glide', 'cutoff', 'reso', 'envamt', 'mode']); put('pk_amp', ['aatk', 'adec', 'asus', 'arel', 'menv']); $('k' + IX.menv).closest('.kn').style.display = 'none';   // the Envelope macro is hidden and rests at 50%
+  put('pk_fx', ['mfx', 'mwet', 'dmix', 'mmix', 'dlmix', 'rvmix']); put('pk_seq', ['pattern', 'sqdens', 'sqoct', 'sqswing', 'sqgate', 'sqspeed']);
+  for (const [k, name] of [['dmix', 'Drive'], ['mmix', 'Mod'], ['dlmix', 'Delay'], ['rvmix', 'Reverb']]) $('k' + IX[k]).closest('.kn').querySelector('.kname').textContent = name;   // four mixes side by side need their effect's name
+ $('k' + IX.sqspeed).closest('.kn').style.display = 'none';   // Speed is fixed at 1x and its knob hidden (2026-11-23)
   $('patKnob').remove();
   for (const g of ['Sound', 'Sequence']) { if (sections[g]) { sections[g].remove(); delete sections[g]; } }
 }
@@ -3073,7 +3116,17 @@ document.addEventListener('click', e => {
 
 
 // Position follows the two table positions after anything that sets them directly (randomize, undo, loading)
-function syncPair() { const w = IX.wpos; if (w === undefined) return; state.A[w] = state.A[oi(0, 'posA')]; state.B[w] = state.A[oi(0, 'posB')]; }
+function syncPair() {
+  const w = IX.wpos; if (w === undefined) return;
+  if (state.links.wpos) state.A[oi(0, 'posB')] = state.B[oi(0, 'posB')] = state.A[oi(0, 'posA')];   // linked: one position for both tables
+  state.A[w] = state.A[oi(0, 'posA')]; state.B[w] = state.A[oi(0, 'posB')];
+  for (const key of ['sqdens', 'sqoct']) if (state.links[key]) state.B[IX[key]] = state.A[IX[key]];   // linked Density or Octave: B follows A after a roll
+}
+// write Position's two handles into the two table positions
+function pushPair(i) {
+  const a = oi(0, 'posA'), b = oi(0, 'posB'); state.A[a] = state.B[a] = state.A[i]; state.A[b] = state.B[b] = state.B[i];
+  if (ready) for (const [q, v] of [[a, state.A[i]], [b, state.B[i]]]) { send({ type:'param', side:'A', i:q, v }); send({ type:'param', side:'B', i:q, v }); }
+}
 syncPair();
 /* =====================================================================
    MENUS (2026-11-11): the app's own dropdowns instead of the system ones
@@ -3498,7 +3551,8 @@ const rnd = Math.random;
 const logr = (lo, hi) => lo * Math.pow(hi / lo, rnd());
 const RND = {
   // macros: Envelope picks where each side sits between pluck and pad; the others start at 50% ("as generated")
-  menv: () => rnd(), mbright: () => 0.5, mfx: () => 0.5, mwet: () => 0.5,
+  menv: () => 0.5, mbright: () => 0.5,   // the Envelope macro left the player's view (2026-11-23): it rests at 50% and the amp envelope itself is rolled
+  sqswing: () => (rnd() < 0.6 ? 0.5 : 0.5 + rnd() * 0.17), sqgate: () => 0.45 + rnd() * 0.55, mfx: () => 0.5, mwet: () => 0.5,
   harm: () => (rnd() < 0.7 ? 1 : 0.6 + rnd() * 0.4),
   // FM: Patch is locked at full range by default, like Wave; each side's patch comes from fmPatch (archetypes)
   fmx: side => (side === 'A' ? 0 : 1), fpitch: () => { const r = rnd(); return r < 0.15 ? -12 : r > 0.85 ? 12 : 0; },
@@ -3534,10 +3588,10 @@ const RND = {
   fsus: () => rnd(),
   frel: () => logr(0.02, 3),
   // the amp envelope is a medium shape with some variety: the Envelope macro takes it to a pluck or a pad (2026-11-06)
-  aatk: () => logr(0.002, 0.02),
-  adec: () => logr(0.4, 1.2),
-  asus: () => 0.4 + rnd() * 0.35,
-  arel: () => logr(0.2, 0.6),
+  aatk: () => logr(0.001, rnd() < 0.65 ? 0.03 : 1.5),   // mostly quick, a third of the time a swell
+  adec: () => logr(0.1, 3),
+  asus: () => (rnd() < 0.3 ? rnd() * 0.25 : 0.3 + rnd() * 0.7),   // plucks three times in ten
+  arel: () => logr(0.06, 3),
   level: () => 0.5 + rnd() * 0.5,
   pan: () => (rnd() * 2 - 1) * 0.6,
   // effects: settings over the full range (the synth is meant to surprise); every effect is always in the chain, so each
@@ -3618,7 +3672,7 @@ const rv = (d, side) => quant(d, clamp(norm(d, RND[d.key](side, d))));
 // both sides at 0 is fine for them. The rule would otherwise re-roll away their stated odds.
 const SPREAD = 0.15, NO_SPREAD = new Set(['lnmix', 'ottgl', 'ottgm', 'ottgh', 'fmix', 'mmix', 'dlmix', 'rvmix', 'lwow', 'lflut', 'lcodec', 'ldrop',
   'glide', 'unison', 'vdepth', 'vrfade', 'mode', 'byp', 'opan', 'soct', 'sstart', 'strack', 'olevel', 'dmix', 'ottdepth', 'lchar', 'sloop', 'dlspill',
-  'mbright', 'mfx', 'mwet', 'harm', 'aatk', 'adec', 'asus', 'arel', 'fpitch']);   // 2026-11-06: the Envelope macro now sets A and B apart
+  'mbright', 'mfx', 'mwet', 'menv', 'sqswing', 'sqgate', 'harm', 'aatk', 'adec', 'asus', 'arel', 'fpitch']);   // 2026-11-06: the Envelope macro now sets A and B apart
 function rvApart(d, side, other) {
   if (NO_SPREAD.has(d.key)) return rv(d, side);
   for (let k = 0; k < 12; k++) { const x = rv(d, side); if (Math.abs(x - other) >= SPREAD) return x; }
@@ -3873,6 +3927,8 @@ function toggleLink(i) {
     if (m) { state.A[i] = m[0]; state.B[i] = m[1]; delete state.linkMem[id]; }
   }
   if (ready) { send({ type:'param', side:'A', i, v: state.A[i] }); send({ type:'param', side:'B', i, v: state.B[i] }); }
+  if (d.pair) pushPair(i);
+  if (d.seq) seqChanged();
   updateKnob(i); updateIcons(); drawWaves(); save();
 }
 document.addEventListener('click', e => {
@@ -4315,7 +4371,7 @@ document.querySelectorAll('.dbox').forEach(box => {
   const name = { synth: 'the synth', amp: 'the amp envelope', filt: 'the filter', fx: 'the effects', seq: 'the sequence' }[scope];
   box.innerHTML = ['A', 'B', 'M'].map(side => `<div class="dcol"><div class="dicetrack" data-what="${scope}" data-side="${side}" data-face="${DIE_FACE[side]}" tabindex="0" role="slider" aria-orientation="vertical" aria-label="Randomize ${name}, ${side === 'M' ? 'both sides' : 'side ' + side}: slide further up for more change" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="fill"></div><div class="die" aria-hidden="true"><div class="face">${'<i></i>'.repeat(DIE_FACE[side])}</div></div></div><span class="dcap${side === 'A' ? ' a' : side === 'B' ? ' b' : ''}">${DIE_CAPS[side]}</span></div>`).join('');
 });
-const TABS = ['synth', 'amp', 'filt', 'fx', 'seq', 'play'];
+const TABS = ['synth', 'amp', 'fx', 'seq', 'play'];   // the filter folded into Synth (2026-11-23)
 let curTab = 'synth';
 try { const t = localStorage.getItem('diptych-tab'); if (TABS.includes(t)) curTab = t; } catch (e) {}
 function setTab(t) {
@@ -4427,6 +4483,18 @@ function animatePanels(now) {
 }
 // a dot on a picture's "now" line
 function playDot(g, x, y, col) { g.fillStyle = col; g.beginPath(); g.arc(x, y, 5, 0, 6.2832); g.fill(); g.strokeStyle = css('--surface'); g.lineWidth = 2; g.stroke(); }
+
+/* The Envelope macro left the player's view (2026-11-23). A patch, preset or side that still holds it away from 50% has
+   it worked into the envelope times themselves (the same sums the engine did), so it sounds as it did, and the macro
+   then rests at 50%. */
+function bakeEnv(k) {
+  const m = IX.menv; if (state[k][m] === 0.5) return;
+  for (let i = 0; i < DEFS.length; i++) { MAC.cur[i] = state[k][i]; MAC.val[i] = MorphEngine.denorm(DEFS[i], MAC.cur[i]); }
+  for (const key of ['mbright', 'mfx', 'mwet']) MAC.cur[IX[key]] = 0.5;   // only the Envelope macro
+  MorphEngine.prototype.applyMacros.call(MAC);
+  for (const key of ['aatk', 'adec', 'asus', 'arel', 'fatk', 'fdec', 'frel']) state[k][IX[key]] = clamp(MAC.macroT[IX[key]]);
+  state[k][m] = 0.5;
+}
 /* =====================================================================
    DICE SLIDERS (Orbital's dice, standing up; 2026-11-11 in each panel)
    Every panel has three: A, B and Both (built in ui/panels.js). Touch a
@@ -4441,18 +4509,19 @@ function playDot(g, x, y, col) { g.fillStyle = col; g.beginPath(); g.arc(x, y, 5
    as before for the target side(s), everything outside the part goes back to where it was, then every value in the part
    moves only `amt` of the way toward the new roll (stepped values round, switches flip with chance amt; on Sound each
    wavetable is replaced with chance amt). On Sound the guards (level match, sine and loudness guards) run again. */
+const SEQ_P = ['sqdens', 'sqspeed', 'sqoct', 'sqswing', 'sqgate'];   // what the Seq dice roll besides the notes
 const AMP_KEYS = new Set(['aatk', 'adec', 'asus', 'arel', 'menv']);
 const FILT_KEYS = new Set(['cutoff', 'reso', 'mode', 'envamt', 'keytrack', 'fatk', 'fdec', 'fsus', 'frel']);
 const isFxD = d => d.kind === 'fx' || d.key === 'mfx' || d.key === 'mwet', isSeqD = d => !!d.seq || d.group === 'Sequencer';
 /* Section padlocks (2026-11-23): each panel's padlock keeps its part out of every roll: its own dice rest (dimmed) and
    the Everything die passes over it. Kept with the patch (state.panelLocks). */
 if (!state.panelLocks || typeof state.panelLocks !== 'object') state.panelLocks = {};
-const panelOf = d => (isSeqD(d) ? 'seq' : AMP_KEYS.has(d.key) ? 'amp' : FILT_KEYS.has(d.key) ? 'filt' : isFxD(d) ? 'fx' : 'synth');
+const panelOf = d => (isSeqD(d) ? 'seq' : AMP_KEYS.has(d.key) ? 'amp' : isFxD(d) ? 'fx' : 'synth');   // the filter belongs to Synth (2026-11-23)
 const PART = {
   amp: d => AMP_KEYS.has(d.key),
   filt: d => FILT_KEYS.has(d.key),
   fx: isFxD,
-  synth: d => !AMP_KEYS.has(d.key) && !FILT_KEYS.has(d.key) && !isFxD(d) && !isSeqD(d),
+  synth: d => !AMP_KEYS.has(d.key) && !isFxD(d) && !isSeqD(d),
   all: d => !isSeqD(d) && !state.panelLocks[panelOf(d)],
 };
 function updatePanelLocks() {
@@ -4486,7 +4555,7 @@ function rollPart(part, side, s) {
     }
     if (sides.length === 2) state.C = state.C.map((c, i) => old.C[i] + (c - old.C[i]) * amt);
   }
-  for (const k of sides) { if (wavesToo) levelMatch(k); if (wavesToo || (part === 'filt') || (part === 'all' && !state.panelLocks.filt)) { sineGuard(k); loudnessGuard(k); } }
+  for (const k of sides) { if (wavesToo) levelMatch(k); if (wavesToo) { sineGuard(k); loudnessGuard(k); } }
 }
 const rollSound = (side, s) => rollPart('synth', side, s);
 // the header's die: everything, both sides (the sound by parts at this strength, and the sequences)
@@ -4496,6 +4565,7 @@ const rollAll = s => { rollPart('all', 'M', s); if (!state.panelLocks.seq) rollS
    melody in the scale), with rests and velocities shuffled in proportion. */
 function rollSeq(side, amt) {
   const sides = side === 'M' ? ['A', 'B'] : [side];
+  for (const k of sides) for (const key of ['sqswing', 'sqgate']) if (!state.locks[key]) { const i = IX[key], to = rv(DEFS[i], k); state[k][i] += (to - state[k][i]) * Math.min(1, amt); }
   if (amt >= 0.9) { if (sides.length === 2) randSeqs(); else randSeqSide(sides[0]); return; }
   for (const k of sides) {
     const q = state.seq[k], fresh = cloneSeq(q);
@@ -4525,7 +4595,7 @@ function makePath(what, side) {
   if (what === 'all') rollAll(1); else if (what === 'seq') rollSeq(side, 1); else rollPart(what, side, 1);
   const full = keepState();
   // locked sequencer knobs (Density, Octave) and a locked Seq section stay where they are
-  for (const k of ['A', 'B']) for (const key of ['sqdens', 'sqspeed', 'sqoct']) if (state.locks[key]) full[k][IX[key]] = base[k][IX[key]];
+  for (const k of ['A', 'B']) for (const key of SEQ_P) if (state.locks[key]) full[k][IX[key]] = base[k][IX[key]];
   const seqHeld = what === 'all' && state.panelLocks.seq;
   if (seqHeld) full.seq = JSON.parse(JSON.stringify(base.seq));
   putState(base);
@@ -4554,13 +4624,13 @@ function pathAt(P, x) {
   if (P.what === 'seq' || P.what === 'all') {
     if (x >= 0.85) {
       state.seq = JSON.parse(JSON.stringify(full.seq));
-      for (const k of ['A', 'B']) for (const key of ['sqdens', 'sqspeed', 'sqoct']) state[k][IX[key]] = full[k][IX[key]];
+      for (const k of ['A', 'B']) for (const key of SEQ_P) state[k][IX[key]] = full[k][IX[key]];
     } else {
       state.seq = JSON.parse(JSON.stringify(base.seq));
       for (const k of ['A', 'B']) {
         const q = state.seq[k], pq = P.part[k];
         q.steps.forEach((st, i) => { if (pq.steps[i] && x / 0.85 > P.useq[k][i]) { st.note = pq.steps[i].note; st.on = pq.steps[i].on; st.vel = pq.steps[i].vel; } });
-        if (P.what === 'seq') for (const key of ['sqdens', 'sqspeed', 'sqoct']) state[k][IX[key]] = base[k][IX[key]];
+        if (P.what === 'seq') for (const key of SEQ_P) state[k][IX[key]] = base[k][IX[key]];
       }
     }
   }
@@ -4660,7 +4730,7 @@ document.addEventListener('pointerdown', e => {
    ===================================================================== */
 const SCHEMES = [   // [name, A light, B light, A dark, B dark] (2026-11-23)
   ['Twin Flame', '#0092B5', '#E62E9C', '#3FD7F2', '#FF5CC2'],   // cyan-blue, and a magenta pink
-  ['Ultra', '#2B2FE0', '#B0102E', '#6A72FF', '#F23B57'],        // ultramarine, and ruby
+  ['Ultra', '#0A35C9', '#B0102E', '#2F62FF', '#F23B57'],        // a deep saturated blue (no violet), and ruby
   ['Iris', '#108A55', '#5A3FC4', '#3FD68F', '#9A86FF'],         // leaf green, and iris violet
   ['Seaglass', '#2DB58C', '#E8787A', '#7FF0C4', '#FF9E9B'],     // seafoam, and a coral-tinted pink
   ['Lumanautics', '#F26A0F', '#97A1AE', '#FF8A2A', '#D5DBE5'],  // orange, and light grey
@@ -4773,6 +4843,7 @@ function loadPreset(k) {
     if (typeof p.walk === 'boolean') state.walk = p.walk;
     (p.tables || []).slice(0, WT_SLOTS.length).forEach((t, s) => ['A', 'B'].forEach(side => { const d = t && decTable(t[side]); if (d) tables[s][side] = d; }));
     if (focus === 'M') state.morph = clamp(+p.morph || 0); else focusMem = clamp(+p.morph || 0);
+    bakeEnv('A'); bakeEnv('B');
     state.presetName = p.name; state.sideNames = p.sideNames ? { ...p.sideNames } : { A: '', B: '' };
   });
   if (p.bpm) setBpm(p.bpm);
@@ -4807,7 +4878,10 @@ $('gPre').addEventListener('click', () => {
   }, { label: 'Presets' });
 });
 /* ---------- side presets (one pool for A and B) ---------- */
-const sideKeys = () => DEFS.map((d, i) => i).filter(i => { const d = DEFS[i]; return !d.single && !d.seq && !d.pair && d.group !== 'Sequencer' && !isLinked(i); });
+/* Not in a side preset: Wave, Sample and Patch. They say which side's table a side reads (A 0%, B 100%); carried in a
+   preset they made B read table A, so changing A's preset changed the sound at full B (2026-11-23). */
+const CROSS = new Set(['wave', 'sample', 'fmx']);
+const sideKeys = () => DEFS.map((d, i) => i).filter(i => { const d = DEFS[i]; return !d.single && !d.seq && !d.pair && d.group !== 'Sequencer' && !isLinked(i) && !CROSS.has(d.key); });
 function sideNow(k) {
   const vals = {}; sideKeys().forEach(i => { vals[DEFS[i].id] = state[k][i]; });
   return { vals, pos: state[k][IX.wpos], table: { name: tables[0][k].name, frames: tables[0][k].frames.map(enc) }, smp: state.smp[k] ? { ...state.smp[k] } : null };
@@ -4839,10 +4913,12 @@ const sidePool = () => [...SIDE_FACTORY, ...readList(SIDE_KEY)];
 function loadSide(k, j) {
   const p = sidePool()[j]; if (!p) return;
   bulk(() => {
-    for (const [id, v] of Object.entries(p.vals || {})) { const i = IX[id]; if (i === undefined || DEFS[i].single || isLinked(i)) continue; state[k][i] = clamp(+v); }
+    for (const [id, v] of Object.entries(p.vals || {})) { const i = IX[id]; if (i === undefined || DEFS[i].single || isLinked(i) || CROSS.has(DEFS[i].key) || state.locks[id]) continue; state[k][i] = clamp(+v); }
+    DEFS.forEach((d, i) => { if (CROSS.has(d.key)) state[k][i] = k === 'A' ? 0 : 1; });   // each side reads its own table
     if (typeof p.pos === 'number') { const x = clamp(p.pos), q = oi(0, k === 'A' ? 'posA' : 'posB'); state.A[q] = state.B[q] = x; }
     const t = p.preset ? makeTable(p.preset) : decTable(p.table); if (t) tables[0][k] = t;
     if (p.smp && okRef(p.smp)) state.smp[k] = { ...p.smp };
+    bakeEnv(k);
     if (p.factory) { analyzeTable(0, k); levelMatch(k); }
     state.sideNames[k] = p.name;
   });
@@ -4945,8 +5021,9 @@ setPill($('viewPill'), fullView ? 1 : 0);
    there and has no rack). The FX dice still roll everything.
    ===================================================================== */
 var rackOpen = false;
-const RACK_KEYS = { drive: ['dmix', 'drive', 'dshape'], formant: ['fmix', 'fvowel', 'freso'], mod: ['mmix', 'mtype', 'mrate'], delay: ['dlmix', 'dltime', 'dlfb'],
-  reverb: ['rvmix', 'rvsize', 'rvdecay'], lofi: ['lchar', 'lwow', 'lnmix'], ott: ['ottdepth', 'otttime'] };
+// Drive, Modulation, Delay and Reverb have their Mix on the FX panel itself (2026-11-23)
+const RACK_KEYS = { drive: ['drive', 'dshape'], formant: ['fmix', 'fvowel', 'freso'], mod: ['mtype', 'mrate', 'mdepth'], delay: ['dltime', 'dlfb', 'dlpp'],
+  reverb: ['rvsize', 'rvdecay', 'rvdamp'], lofi: ['lchar', 'lwow', 'lnmix'], ott: ['ottdepth', 'otttime'] };
 function updateRack() { document.querySelectorAll('[data-rackfx]').forEach(p => setPill(p, state.fxOn[+p.dataset.rackfx] ? 0 : 1)); }
 if (!devView) {
   const rack = $('fxRack'), rows = $('rackRows');
@@ -4955,7 +5032,7 @@ if (!devView) {
     row.innerHTML = `<div class="rhead"><button type="button" class="key rname" aria-expanded="false">${FX_NAMES[s]}</button><button type="button" class="pill" id="rackFx${s}" data-rackfx="${s}" role="switch" aria-label="${FX_NAMES[s]} on or off"><span>On</span><span>Off</span></button></div><div class="knobs rknobs"></div><div class="knobs rmore" hidden></div>`;
     rows.appendChild(row);
     const main = row.querySelector('.rknobs'), more = row.querySelector('.rmore');
-    DEFS.forEach((d, i) => { if (d.kind !== 'fx' || d.slot !== s || d.opts) return; const kn = $('k' + i).closest('.kn'); kn.classList.remove('adv'); (RACK_KEYS[eng].includes(d.key) ? main : more).appendChild(kn); });
+    DEFS.forEach((d, i) => { if (d.kind !== 'fx' || d.slot !== s || d.opts) return; const kn = $('k' + i).closest('.kn'); if (kn.closest('#pk_fx')) return; kn.classList.remove('adv'); (RACK_KEYS[eng].includes(d.key) ? main : more).appendChild(kn); });
     RACK_KEYS[eng].forEach(k => main.appendChild($('k' + IX[k]).closest('.kn')));   // in the listed order
     const name = row.querySelector('.rname');
     if (!more.children.length) name.disabled = true;
@@ -5616,6 +5693,15 @@ function capturePattern(side, noUndo) {
   if (ready) sendState();
   refreshSeqKnobs(); updateKnob(IX.pattern); if (sq.classList.contains('open')) syncSeqControls(); seqChanged();
 }
+
+/* The editor's layout (2026-11-23): the roll comes first under one strip (side, rate, steps, shift, Generate); the
+   generators and random tools are a sheet that closes once it has made something; the help is behind "?". */
+const closeGen = () => { $('genSheet').hidden = true; };
+$('sqGenOpen').addEventListener('click', () => { $('genSheet').hidden = false; $('genDone').focus({ preventScroll: true }); });
+$('genDone').addEventListener('click', closeGen);
+$('genSheet').addEventListener('click', e => { if (e.target === $('genSheet') || e.target.closest('#sqGen, #rzNotes, #rzVel, #rzRate, #rzArp, #rzAll')) closeGen(); });
+$('sqHelpBtn').addEventListener('click', () => { const h = $('sqHelp'); h.hidden = !h.hidden; $('sqHelpBtn').setAttribute('aria-expanded', String(!h.hidden)); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('genSheet').hidden) closeGen(); });
 const GUT = 34, RH = 14;
 // rows: the scale's notes over the pattern's range plus a margin, at least two octaves (2026-11-11: the full C2 to C6 put
 // a pattern's notes off the bottom of a phone screen)
@@ -5726,6 +5812,7 @@ updateIcons();
 applyLayout();
 refreshAll();
 updateBlendUI();
+bakeEnv('A'); bakeEnv('B');   // an older session's Envelope macro becomes envelope times
 // Every launch starts from a fresh random patch and fresh 16-step sequences. Undo brings back the last session.
 bulk(() => { randomizeAll(); randSeqs(); });
 setBpm(85 + Math.random() * 50);

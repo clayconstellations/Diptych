@@ -16,7 +16,7 @@ document.querySelectorAll('.dbox').forEach(box => {
   const name = { synth: 'the synth', amp: 'the amp envelope', filt: 'the filter', fx: 'the effects', seq: 'the sequence' }[scope];
   box.innerHTML = ['A', 'B', 'M'].map(side => `<div class="dcol"><div class="dicetrack" data-what="${scope}" data-side="${side}" data-face="${DIE_FACE[side]}" tabindex="0" role="slider" aria-orientation="vertical" aria-label="Randomize ${name}, ${side === 'M' ? 'both sides' : 'side ' + side}: slide further up for more change" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="fill"></div><div class="die" aria-hidden="true"><div class="face">${'<i></i>'.repeat(DIE_FACE[side])}</div></div></div><span class="dcap${side === 'A' ? ' a' : side === 'B' ? ' b' : ''}">${DIE_CAPS[side]}</span></div>`).join('');
 });
-const TABS = ['synth', 'amp', 'filt', 'fx', 'seq', 'play'];
+const TABS = ['synth', 'amp', 'fx', 'seq', 'play'];   // the filter folded into Synth (2026-11-23)
 let curTab = 'synth';
 try { const t = localStorage.getItem('diptych-tab'); if (TABS.includes(t)) curTab = t; } catch (e) {}
 function setTab(t) {
@@ -128,3 +128,15 @@ function animatePanels(now) {
 }
 // a dot on a picture's "now" line
 function playDot(g, x, y, col) { g.fillStyle = col; g.beginPath(); g.arc(x, y, 5, 0, 6.2832); g.fill(); g.strokeStyle = css('--surface'); g.lineWidth = 2; g.stroke(); }
+
+/* The Envelope macro left the player's view (2026-11-23). A patch, preset or side that still holds it away from 50% has
+   it worked into the envelope times themselves (the same sums the engine did), so it sounds as it did, and the macro
+   then rests at 50%. */
+function bakeEnv(k) {
+  const m = IX.menv; if (state[k][m] === 0.5) return;
+  for (let i = 0; i < DEFS.length; i++) { MAC.cur[i] = state[k][i]; MAC.val[i] = MorphEngine.denorm(DEFS[i], MAC.cur[i]); }
+  for (const key of ['mbright', 'mfx', 'mwet']) MAC.cur[IX[key]] = 0.5;   // only the Envelope macro
+  MorphEngine.prototype.applyMacros.call(MAC);
+  for (const key of ['aatk', 'adec', 'asus', 'arel', 'fatk', 'fdec', 'frel']) state[k][IX[key]] = clamp(MAC.macroT[IX[key]]);
+  state[k][m] = 0.5;
+}

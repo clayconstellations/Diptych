@@ -11,7 +11,7 @@ body:not(.dev) .kwrap .icons{display:none}
 /* the developer view keeps one Wavetable (2026-11-10): the other oscillators are silent and hidden */
 .group[data-kind="osc"]:not([data-slot="0"]){display:none}
 /* tabs: Synth, Amp, Filt, FX, Seq, Play */
-.tabs{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;padding:0 14px 8px;max-width:780px;margin:0 auto;width:100%}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:0 14px 8px;max-width:780px;margin:0 auto;width:100%}
 .tab{min-height:34px;font-size:.66rem;padding:4px 0;letter-spacing:.06em}
 .tab[aria-selected="true"]{background:var(--hold);color:var(--on-ink)}
 /* panels: controls top left, dice top right (the same place on every tab), the picture the full width, knobs below */
@@ -271,13 +271,9 @@ select{font-size:.8rem}
 /* a side in focus: the other side's key and the MORPH block grey out (they still work: tap either to leave or switch) */
 body[data-sidefocus="A"] .letter.b,body[data-sidefocus="B"] .letter.a{color:var(--muted)!important;filter:grayscale(1);opacity:.55}
 .morph-slider.rest .mcap{color:var(--muted);background:var(--well);opacity:.75}
-/* selections and actions: actions are raised keys that press in; selections (tabs, pills, colourways) are flat segments
-   that light in yellow, so nothing that is merely "on" looks pressed */
-.tab,.pill,.scheme{box-shadow:none;background:var(--well);border:1.5px solid var(--k);margin:0 4px 4px 0}
-.tab.down,.pill.down,.scheme.down{transform:none}
+/* selections (tabs, pills, colourways) are raised keys like the rest (the owner preferred the 3D look, 2026-11-23); the
+   one that is on is yellow and stays level */
 .tab[aria-selected="true"],.scheme[aria-pressed="true"]{background:var(--hold);color:var(--on-ink)}
-.pill span.on{background:var(--hold);color:var(--on-ink)}
-.vivid .tab[aria-selected="false"]{background:var(--well)}
 /* 3rd / 4th / 5th: equal boxes */
 #rowPill span{min-width:54px;justify-content:center}
 /* lock and link icons on the panels' knobs; section padlocks in the panel titles */
@@ -311,3 +307,37 @@ body:not(.dev) .panel .kwrap .icons{display:flex}
 .desk:not(.dev) .panel[data-panel="seq"] .knobs{padding-right:150px}
 .desk:not(.dev) .panel[data-panel="seq"] .pfoot{flex-direction:column;align-items:flex-end;gap:2px}
 .desk:not(.dev) .panel[data-panel="seq"] .pfoot .spacer{display:none}
+
+/* ===== ninth pass (2026-11-23): five tabs, more knobs ===== */
+/* Synth's picture: the wave and the filter's sweep side by side */
+.pviz2{flex-direction:row;gap:6px}
+.pviz2 canvas{flex:1 1 0;min-width:0;width:auto;height:100%}
+.pviz{min-height:96px}
+/* phones: Synth has two rows of four knobs, FX the two macros then four mixes, Seq five across */
+body:not(.desk) #pk_synth,body:not(.desk) #pk_fx{grid-auto-flow:row;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px 2px}
+body:not(.desk) #pk_fx .kn:nth-child(3){grid-column-start:1}
+body:not(.desk) #pk_synth .knob,body:not(.desk) #pk_fx .knob,body:not(.desk) #pk_amp .knob{width:58px;height:58px}
+body:not(.desk) #pk_seq .knob{width:52px;height:52px}
+body:not(.desk) .panel .kname{font-size:.58rem;letter-spacing:.06em}
+body:not(.desk) .panel .kab{font-size:.6rem}
+/* desktop: Synth spans two columns with its eight knobs in one row; Amp beside it; FX, Seq and Keys below */
+.desk:not(.dev) .panel[data-panel="synth"]{grid-column:span 2}
+.desk:not(.dev) #pk_seq .knob{width:44px;height:44px}
+.desk:not(.dev) #pk_seq .kname{font-size:.56rem;letter-spacing:.02em}
+.desk:not(.dev) #pk_fx .knob{width:50px;height:50px}
+.desk.dev .panels{grid-template-columns:2fr 1fr 1.4fr 1.4fr 1fr}
+/* the sequence editor: one strip, then the roll */
+.sqstrip{gap:6px 8px}
+.sqstrip .opt{gap:4px}
+.sqstrip .opt b{font-family:var(--font-mono);min-width:1.6em;text-align:center}
+#genSheet .sheetcard{gap:12px}
+#sqHelpBtn{font-family:var(--font-head);font-size:.95rem}
+/* desktop Seq: five knobs across the full width, Walk / Swap and Edit in a row below; FX: six knobs with tighter labels */
+.desk:not(.dev) .panel[data-panel="seq"] .knobs{padding-right:0}
+.desk:not(.dev) .panel[data-panel="seq"] .pfoot{flex-direction:row;align-items:center}
+.desk:not(.dev) .panel[data-panel="seq"] .pfoot .spacer{display:block}
+.desk:not(.dev) .panel[data-panel="seq"] .pviz{min-height:54px}
+.desk:not(.dev) .panel[data-panel="seq"] .ptop .dicetrack{height:46px}
+.desk:not(.dev) #pk_seq .kval{font-size:.62rem}
+.desk:not(.dev) #pk_fx .kname{font-size:.54rem;letter-spacing:0}
+body:not(.desk) #pk_seq .kval{font-size:.6rem;padding:1px 0}

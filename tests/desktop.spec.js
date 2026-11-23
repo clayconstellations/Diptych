@@ -21,7 +21,7 @@ for (const [w, h] of [[1280, 720], [1440, 900], [1920, 1080], [2560, 1200]]) {
     expect(m.appBottom).toBeLessThanOrEqual(1); expect(m.appRight).toBeLessThanOrEqual(1);
     expect(m.cut).toEqual([]);
     // all four panels show, and none is cut off
-    expect(await page.evaluate(() => [...document.querySelectorAll('.panel')].filter(p => p.offsetParent && p.scrollHeight <= p.clientHeight + 1).map(p => p.dataset.panel))).toEqual(['synth', 'amp', 'filt', 'fx', 'seq', 'play']);
+    expect(await page.evaluate(() => [...document.querySelectorAll('.panel')].filter(p => p.offsetParent && p.scrollHeight <= p.clientHeight + 1).map(p => p.dataset.panel))).toEqual(['synth', 'amp', 'fx', 'seq', 'play']);
   });
   test(`${w}x${h}: the developer view never scrolls the page`, async ({ page }) => {
     await page.setViewportSize({ width: w, height: h });
@@ -40,7 +40,7 @@ for (const [w, h] of [[1280, 720], [1440, 900], [1920, 1080], [2560, 1200]]) {
 test('the Basic view comes out larger than the Full view', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openSynth(page);
-  const size = () => page.evaluate(() => $('k' + IX.aatk).getBoundingClientRect().width);
+  const size = () => page.evaluate(() => $('k' + IX.fvowel).getBoundingClientRect().width);
   const basic = await size(); await page.click('#viewPill > span:nth-child(2)'); const full = await size();
   expect(basic).toBeGreaterThan(full * 1.15);
 });
@@ -48,7 +48,7 @@ test('the Basic view comes out larger than the Full view', async ({ page }) => {
 test('knobs still drag when the layout is scaled down', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await openSynth(page, { dev: false });
-  const i = await page.evaluate(() => IX.menv);   // A and B sit apart (15% rule), so the A handle is unambiguous
+  const i = await page.evaluate(() => IX.mbright);   // A and B are set apart below, so the A handle is unambiguous
   await page.evaluate(i => { state.A[i] = 0.3; state.B[i] = 0.8; updateKnob(i); }, i);
   const before = await page.evaluate(i => state.A[i], i);
   const box = await page.locator(`#hA${i}`).boundingBox();

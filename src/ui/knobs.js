@@ -44,7 +44,7 @@ const knobSVG = (d, i) => `<svg viewBox="0 0 80 80" aria-hidden="false">
 const groupsEl = document.getElementById('groups');
 const knobHTML = (d, i) => `<div class="kn${isBasic(d) ? '' : ' adv'}">
     <div class="kname">${d.label}</div>
-    <div class="kwrap"><div class="knob" id="k${i}">${knobSVG(d, i)}</div>${iconBtn(d.id, d.label, d.single || d.seq || d.pair)}</div>
+    <div class="kwrap"><div class="knob" id="k${i}">${knobSVG(d, i)}</div>${iconBtn(d.id, d.label, d.single)}</div>
     <div class="kval" id="v${i}"></div>
     <div class="kab"><span class="a" id="va${i}"></span><span class="b" id="vb${i}"></span></div>
   </div>`;
@@ -166,7 +166,8 @@ function updateKnob(i) {
   $('gl' + i).setAttribute('d', linked || d.seq || d.pair || F ? '' : path);
   { const x = F ? state[F][i] : linked || d.seq || d.pair ? a : r, an = ang(x);
     $('ptr' + i).setAttribute('x1', (CX + 13.5 * Math.cos(an)).toFixed(2)); $('ptr' + i).setAttribute('y1', (CX + 13.5 * Math.sin(an)).toFixed(2));
-    $('ptr' + i).setAttribute('x2', (CX + 19 * Math.cos(an)).toFixed(2)); $('ptr' + i).setAttribute('y2', (CX + 19 * Math.sin(an)).toFixed(2)); }
+    $('ptr' + i).setAttribute('x2', (CX + 19 * Math.cos(an)).toFixed(2)); $('ptr' + i).setAttribute('y2', (CX + 19 * Math.sin(an)).toFixed(2));
+    $('ptr' + i).style.display = F || linked ? '' : 'none'; }   // no pointer while the knob morphs: the dots on the ring say it, and the line crossed the curve (2026-11-23)
   $('gd' + i).setAttribute('cx', (x0 + m * S).toFixed(2)); $('gd' + i).setAttribute('cy', (y0 - gy * S).toFixed(2));
 
   // text
@@ -217,6 +218,7 @@ function setParam(side, i, x) {
   if (isLinked(i)) {   // linked or single-side: both sides always hold the same value
     if (state.A[i] === x && state.B[i] === x) return;
     state.A[i] = x; state.B[i] = x;
+    if (DEFS[i].pair) pushPair(i);   // a linked Position moves both tables' positions
     updateKnob(i);
     if (ready) { send({ type:'param', side:'A', i, v:x }); send({ type:'param', side:'B', i, v:x }); }
     drawWaves(); save();
@@ -325,7 +327,10 @@ DEFS.forEach((d, i) => { if (!d.opts) bindKnob(i); });
    sequencer's knobs move into the panels (Synth, Amp, Filt, FX, Seq), and the Sound and Sequence cards go away. */
 {
   const put = (box, keys) => keys.forEach(k => $(box).appendChild($('k' + IX[k]).closest('.kn')));
-  put('pk_synth', ['mbright', 'wpos']); put('pk_amp', ['menv']); put('pk_filt', ['cutoff', 'reso', 'envamt']); put('pk_fx', ['mfx', 'mwet']); put('pk_seq', ['pattern', 'sqdens', 'sqoct', 'sqspeed']); $('k' + IX.sqspeed).closest('.kn').style.display = 'none';   // Speed is fixed at 1x and its knob hidden (2026-11-23)
+  put('pk_synth', ['wpos', 'mbright', 'o1.unison', 'glide', 'cutoff', 'reso', 'envamt', 'mode']); put('pk_amp', ['aatk', 'adec', 'asus', 'arel', 'menv']); $('k' + IX.menv).closest('.kn').style.display = 'none';   // the Envelope macro is hidden and rests at 50%
+  put('pk_fx', ['mfx', 'mwet', 'dmix', 'mmix', 'dlmix', 'rvmix']); put('pk_seq', ['pattern', 'sqdens', 'sqoct', 'sqswing', 'sqgate', 'sqspeed']);
+  for (const [k, name] of [['dmix', 'Drive'], ['mmix', 'Mod'], ['dlmix', 'Delay'], ['rvmix', 'Reverb']]) $('k' + IX[k]).closest('.kn').querySelector('.kname').textContent = name;   // four mixes side by side need their effect's name
+ $('k' + IX.sqspeed).closest('.kn').style.display = 'none';   // Speed is fixed at 1x and its knob hidden (2026-11-23)
   $('patKnob').remove();
   for (const g of ['Sound', 'Sequence']) { if (sections[g]) { sections[g].remove(); delete sections[g]; } }
 }
@@ -338,5 +343,15 @@ document.addEventListener('click', e => {
 
 
 // Position follows the two table positions after anything that sets them directly (randomize, undo, loading)
-function syncPair() { const w = IX.wpos; if (w === undefined) return; state.A[w] = state.A[oi(0, 'posA')]; state.B[w] = state.A[oi(0, 'posB')]; }
+function syncPair() {
+  const w = IX.wpos; if (w === undefined) return;
+  if (state.links.wpos) state.A[oi(0, 'posB')] = state.B[oi(0, 'posB')] = state.A[oi(0, 'posA')];   // linked: one position for both tables
+  state.A[w] = state.A[oi(0, 'posA')]; state.B[w] = state.A[oi(0, 'posB')];
+  for (const key of ['sqdens', 'sqoct']) if (state.links[key]) state.B[IX[key]] = state.A[IX[key]];   // linked Density or Octave: B follows A after a roll
+}
+// write Position's two handles into the two table positions
+function pushPair(i) {
+  const a = oi(0, 'posA'), b = oi(0, 'posB'); state.A[a] = state.B[a] = state.A[i]; state.A[b] = state.B[b] = state.B[i];
+  if (ready) for (const [q, v] of [[a, state.A[i]], [b, state.B[i]]]) { send({ type:'param', side:'A', i:q, v }); send({ type:'param', side:'B', i:q, v }); }
+}
 syncPair();

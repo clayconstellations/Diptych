@@ -5,6 +5,7 @@ updateIcons();
 applyLayout();
 refreshAll();
 updateBlendUI();
+bakeEnv('A'); bakeEnv('B');   // an older session's Envelope macro becomes envelope times
 // Every launch starts from a fresh random patch and fresh 16-step sequences. Undo brings back the last session.
 bulk(() => { randomizeAll(); randSeqs(); });
 setBpm(85 + Math.random() * 50);
