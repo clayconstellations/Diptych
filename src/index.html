@@ -45,13 +45,18 @@
 </header>
 
 <nav class="tabs" role="tablist" aria-label="Sections">
-  <button type="button" class="key tab" role="tab" data-tab="synth" aria-selected="false">Synth</button><button type="button" class="key tab" role="tab" data-tab="amp" aria-selected="false">Amp</button><button type="button" class="key tab" role="tab" data-tab="fx" aria-selected="false">FX</button><button type="button" class="key tab" role="tab" data-tab="seq" aria-selected="false">Seq</button><button type="button" class="key tab" role="tab" data-tab="play" aria-selected="false">Keys</button>
+  <button type="button" class="key tab" role="tab" data-tab="synth" aria-selected="false">Synth</button><button type="button" class="key tab" role="tab" data-tab="filt" aria-selected="false">Filt</button><button type="button" class="key tab" role="tab" data-tab="amp" aria-selected="false">Amp</button><button type="button" class="key tab" role="tab" data-tab="fx" aria-selected="false">FX</button><button type="button" class="key tab" role="tab" data-tab="seq" aria-selected="false">Seq</button><button type="button" class="key tab" role="tab" data-tab="play" aria-selected="false">Keys</button>
 </nav>
 <div class="panels" id="panels">
   <section class="panel" data-panel="synth" role="tabpanel" aria-label="Synth">
     <div class="ptop"><div class="pctl"><h2 class="ph">Synth<button type="button" class="lock plock" data-panellock="synth" aria-pressed="false"></button></h2></div><div class="dbox" data-scope="synth"></div></div>
-    <div class="pviz pviz2"><canvas id="scope" aria-label="Wave display: the wave you hear now"></canvas><canvas id="filtviz" aria-label="Filter: the cutoff over a held note, side A, side B and what you hear now"></canvas></div>
+    <div class="pviz"><canvas id="scope" aria-label="Wave display: the wave you hear now"></canvas></div>
     <div class="knobs" id="pk_synth"></div>
+  </section>
+  <section class="panel" data-panel="filt" role="tabpanel" aria-label="Filter">
+    <div class="ptop"><div class="pctl"><h2 class="ph">Filt<button type="button" class="lock plock" data-panellock="filt" aria-pressed="false"></button></h2></div><div class="dbox" data-scope="filt"></div></div>
+    <div class="pviz"><canvas id="filtviz" aria-label="Filter: the cutoff over a held note, side A, side B and what you hear now"></canvas></div>
+    <div class="knobs" id="pk_filt"></div>
   </section>
   <section class="panel" data-panel="amp" role="tabpanel" aria-label="Amp">
     <div class="ptop"><div class="pctl"><h2 class="ph">Amp<button type="button" class="lock plock" data-panellock="amp" aria-pressed="false"></button></h2></div><div class="dbox" data-scope="amp"></div></div>
@@ -59,20 +64,20 @@
     <div class="knobs" id="pk_amp"></div>
   </section>
   <section class="panel" data-panel="fx" role="tabpanel" aria-label="FX">
-    <div class="ptop"><div class="pctl"><h2 class="ph">FX<button type="button" class="lock plock" data-panellock="fx" aria-pressed="false"></button></h2></div><div class="dbox" data-scope="fx"></div></div>
+    <div class="ptop"><div class="pctl"><h2 class="ph">FX<button type="button" class="lock plock" data-panellock="fx" aria-pressed="false"></button></h2><div class="pctl2"><button type="button" class="key" id="fxEdit" aria-label="Edit the effects">Edit</button></div></div><div class="dbox" data-scope="fx"></div></div>
     <div class="pviz"><canvas id="fxscope" aria-label="Effects shown on the wave you hear now"></canvas></div>
-    <div class="knobs" id="pk_fx"></div><div class="pfoot"><span class="spacer"></span><button type="button" class="key" id="fxEdit" aria-label="Edit the effects">Edit</button></div>
+    <div class="knobs" id="pk_fx"></div>
     <div class="rack" id="fxRack" hidden><div class="rackhead"><h2 class="ph">FX rack</h2><button type="button" class="key" id="rackDone">Done</button></div><div id="rackRows"></div></div>
   
   </section>
   <section class="panel" data-panel="seq" role="tabpanel" aria-label="Seq">
-    <div class="ptop"><div class="pctl"><h2 class="ph">Seq<button type="button" class="lock plock" data-panellock="seq" aria-pressed="false"></button></h2></div><div class="dbox" data-scope="seq"></div></div>
+    <div class="ptop"><div class="pctl"><h2 class="ph">Seq<button type="button" class="lock plock" data-panellock="seq" aria-pressed="false"></button></h2><div class="pctl2" id="pSeqFoot"><button type="button" class="key" id="seqEdit" aria-label="Edit sequences">Edit</button></div></div><div class="dbox" data-scope="seq"></div></div>
     <div class="pviz"><div class="lanes">
-        <span class="ln a">A</span><div class="lane"><canvas id="lnA" aria-label="Sequence A"></canvas></div>
-        <span class="ln now">Now</span><div class="lane"><canvas id="lnL" aria-label="Sequence playing now"></canvas></div>
-        <span class="ln b">B</span><div class="lane"><canvas id="lnB" aria-label="Sequence B"></canvas></div>
+        <span class="ln a">A</span><div class="lane"><canvas id="lnA" aria-label="Sequence A"></canvas></div><span class="rot"><button type="button" class="key" data-rot="A" data-dir="-1" aria-label="Shift sequence A one step earlier">←</button><button type="button" class="key" data-rot="A" data-dir="1" aria-label="Shift sequence A one step later">→</button></span>
+        <span class="ln now">Now</span><div class="lane"><canvas id="lnL" aria-label="Sequence playing now"></canvas></div><span></span>
+        <span class="ln b">B</span><div class="lane"><canvas id="lnB" aria-label="Sequence B"></canvas></div><span class="rot"><button type="button" class="key" data-rot="B" data-dir="-1" aria-label="Shift sequence B one step earlier">←</button><button type="button" class="key" data-rot="B" data-dir="1" aria-label="Shift sequence B one step later">→</button></span>
       </div></div>
-    <div class="knobs" id="pk_seq"></div><div class="pfoot" id="pSeqFoot"><span class="spacer"></span><button type="button" class="key" id="seqEdit" aria-label="Edit sequences">Edit</button></div>
+    <div class="knobs" id="pk_seq"></div>
   </section>
   <section class="panel" data-panel="play" role="tabpanel" aria-label="Keys">
     <div class="ptop"><div class="pctl"><h2 class="ph">Keys</h2><div class="pctl2"><button type="button" class="pill kbpill" id="kbPill" aria-label="Keyboard layout: piano, grid or hexagons"><span data-kb="piano" aria-label="Piano keys"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M9 4v16M15 4v16"/><path d="M7.5 4h3v9h-3zM13.5 4h3v9h-3z" fill="currentColor"/></svg></span><span data-kb="grid" aria-label="Grid"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/></svg></span><span data-kb="hex" aria-label="Hexagons"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5l7.4 4.25v8.5L12 20.5l-7.4-4.25v-8.5z"/></svg></span></button><span class="octbox"><button type="button" class="key" id="octDown" aria-label="Octave down">−</button><span class="oct" id="octLabel">C3</span><button type="button" class="key" id="octUp" aria-label="Octave up">+</button></span><button type="button" class="key" id="latch" aria-pressed="false">Latch</button></div></div></div>

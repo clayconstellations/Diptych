@@ -17,8 +17,7 @@ const RND = {
   // oscillators: Level decides whether each one is heard on this side (set by pickOscs; oscGuard keeps at least one)
   olevel: () => 0, opan: () => (rnd() < 0.5 ? 0 : (rnd() * 2 - 1) * 0.6),
   byp: () => (rnd() < 0.8 ? 0 : rnd() * 0.5),
-  pitch: () => { const r = rnd(); return r < 0.15 ? -12 : r > 0.85 ? 12 : 0; },
-  fine: () => (rnd() < 0.7 ? 0 : (rnd() * 2 - 1) * 15),
+  pitch: () => 0, fine: () => 0,   // the one Wavetable stays in tune (2026-11-25): an octave or a few cents apart between A and B made the dice change the pitch, with no control in the player's view to put it back
   // Sampler: Sample is locked at full range by default, like Wave; Start usually at the top; Key track usually full
   sample: side => (side === 'A' ? 0 : 1), sstart: () => (rnd() < 0.6 ? 0 : rnd() * 0.4),
   spitch: () => { const r = rnd(); return r < 0.15 ? -12 : r > 0.85 ? 12 : 0; }, sfine: () => (rnd() < 0.7 ? 0 : (rnd() * 2 - 1) * 15),

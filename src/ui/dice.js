@@ -19,12 +19,12 @@ const isFxD = d => d.kind === 'fx' || d.key === 'mfx' || d.key === 'mwet', isSeq
 /* Section padlocks (2026-11-23): each panel's padlock keeps its part out of every roll: its own dice rest (dimmed) and
    the Everything die passes over it. Kept with the patch (state.panelLocks). */
 if (!state.panelLocks || typeof state.panelLocks !== 'object') state.panelLocks = {};
-const panelOf = d => (isSeqD(d) ? 'seq' : AMP_KEYS.has(d.key) ? 'amp' : isFxD(d) ? 'fx' : 'synth');   // the filter belongs to Synth (2026-11-23)
+const panelOf = d => (isSeqD(d) ? 'seq' : AMP_KEYS.has(d.key) ? 'amp' : FILT_KEYS.has(d.key) ? 'filt' : isFxD(d) ? 'fx' : 'synth');   // the filter has its own tab again (2026-11-25)
 const PART = {
   amp: d => AMP_KEYS.has(d.key),
   filt: d => FILT_KEYS.has(d.key),
   fx: isFxD,
-  synth: d => !AMP_KEYS.has(d.key) && !isFxD(d) && !isSeqD(d),
+  synth: d => !AMP_KEYS.has(d.key) && !FILT_KEYS.has(d.key) && !isFxD(d) && !isSeqD(d),
   all: d => !isSeqD(d) && !state.panelLocks[panelOf(d)],
 };
 function updatePanelLocks() {

@@ -1,9 +1,9 @@
 /* Tokens shared with the family (Orbital, Pixy, Heather, Drumroll, 2026-11-10): cool grey panels, raised keycap
    buttons, Oxanium / Chakra Petch / JetBrains Mono. A stays blue and B pink; the morph passes through purple. */
 :root{
-  --bg:#E6EAF0; --surface:#F4F6F9; --well:#DCE1E9; --ink:#101521; --muted:#556076; --line:#C3CAD6; --edge:#A9B3C3;
-  --shadow:#A9B1C0; --cap-hi:#FFFFFF; --cap-lo:#E3E7EE; --hold:#F2C200; --on-ink:#15120A;
-  --a:#4F6FE0; --b:#E3308F; --key:#FFFFFF; --keyb:#1A2030;
+  --bg0:#E8E8EA; --surface0:#F6F6F7; --well0:#DEDEE1; --ink0:#131316; --muted0:#5B5B63; --line0:#C8C8CC; --edge0:#AEAEB4;
+  --shadow0:#ADADB3; --cap-hi0:#FFFFFF; --cap-lo0:#E5E5E8; --k0:#82828A; --hold:#F2C200; --on-ink:#15120A;
+  --a:#4F6FE0; --b:#E3308F; --key:#FFFFFF; --keyb:#1C1C22;
   --mix:0%; --mc:color-mix(in oklch, var(--a), var(--b) var(--mix));
   --font-head:'Oxanium','Eurostile',system-ui,sans-serif;
   --font-ui:'Chakra Petch','Eurostile',system-ui,-apple-system,'Segoe UI',sans-serif;
@@ -15,15 +15,15 @@
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#05070C; --surface:#0C111B; --well:#0E1320; --ink:#E4E9F3; --muted:#8590A8; --line:#232C40; --edge:#2B3650;
-    --shadow:#000; --cap-hi:#1E2638; --cap-lo:#141B29; --hold:#FFD21F;
-    --a:#7F9BFF; --b:#FF5AAE; --key:#D6DCE8; --keyb:#05070C; color-scheme:dark;
+    --bg0:#060607; --surface0:#0F0F11; --well0:#131316; --ink0:#E8E8EC; --muted0:#8C8C96; --line0:#27272C; --edge0:#303037;
+    --shadow0:#000; --cap-hi0:#212126; --cap-lo0:#17171A; --k0:#45454E; --hold:#FFD21F;
+    --a:#7F9BFF; --b:#FF5AAE; --key:#D9D9DE; --keyb:#060607; color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#05070C; --surface:#0C111B; --well:#0E1320; --ink:#E4E9F3; --muted:#8590A8; --line:#232C40; --edge:#2B3650;
-  --shadow:#000; --cap-hi:#1E2638; --cap-lo:#141B29; --hold:#FFD21F;
-  --a:#7F9BFF; --b:#FF5AAE; --key:#D6DCE8; --keyb:#05070C; color-scheme:dark;
+  --bg0:#060607; --surface0:#0F0F11; --well0:#131316; --ink0:#E8E8EC; --muted0:#8C8C96; --line0:#27272C; --edge0:#303037;
+  --shadow0:#000; --cap-hi0:#212126; --cap-lo0:#17171A; --k0:#45454E; --hold:#FFD21F;
+  --a:#7F9BFF; --b:#FF5AAE; --key:#D9D9DE; --keyb:#060607; color-scheme:dark;
 }
 html{scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
 *,*::before,*::after{box-sizing:inherit}
@@ -36,9 +36,16 @@ body{
 /* keys (2026-11-10, Touchy's 3D block): a flat face with an outline and a solid side made of four stacked 1px shadows,
    down and to the right. A press sinks the key into its side (4px, for at least 90 ms, ui/settings.js); a key that is
    on fills with the family yellow but stays level with its neighbours (owner: held keys looking offset read as a mistake). */
-:root{--k:#7D879B}
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--k:#3E4A66} }
-:root[data-theme="dark"]{--k:#3E4A66}
+/* The neutrals live in the colourway (2026-11-25): each theme gives plain greys (the --x0 tokens above), and every
+   neutral the page uses is that grey with a share of the colour heard now (--mc) mixed in, so panels, wells, lines, key
+   sides and text follow the scheme and the morph instead of staying a fixed cool blue. Mixed in oklab (a grey has no hue
+   of its own to turn toward). */
+:root{
+  --bg:color-mix(in oklab,var(--mc) 10%,var(--bg0)); --surface:color-mix(in oklab,var(--mc) 6%,var(--surface0)); --well:color-mix(in oklab,var(--mc) 11%,var(--well0));
+  --ink:color-mix(in oklab,var(--mc) 12%,var(--ink0)); --muted:color-mix(in oklab,var(--mc) 24%,var(--muted0)); --line:color-mix(in oklab,var(--mc) 16%,var(--line0));
+  --edge:color-mix(in oklab,var(--mc) 20%,var(--edge0)); --shadow:color-mix(in oklab,var(--mc) 20%,var(--shadow0)); --cap-hi:color-mix(in oklab,var(--mc) 4%,var(--cap-hi0));
+  --cap-lo:color-mix(in oklab,var(--mc) 9%,var(--cap-lo0)); --k:color-mix(in oklab,var(--mc) 28%,var(--k0));
+}
 button,select,.key{
   font:inherit;font-weight:600;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);
   background:var(--cap-hi);border:1.5px solid var(--k);border-radius:10px;

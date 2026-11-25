@@ -113,9 +113,9 @@ test.describe('Randomize all (shaped)', () => {
     near(share(all('byp'), x => x === 0), 0.8, 0.05);
     near(share(all('soct'), x => x === -1), 0.6, 0.08);
   });
-  test('linked Pitch and Fine: 0 about 70% of the time', () => {
+  test('Pitch and Fine stay at 0: the one Wavetable is always in tune (2026-11-25)', () => {
     const p = S.flatMap(r => r.linkedPitch);
-    near(share(p, x => x[0] === 0), 0.7, 0.06); near(share(p, x => x[1] === 0), 0.7, 0.06);
+    expect(share(p, x => x[0] === 0)).toBe(1); expect(share(p, x => x[1] === 0)).toBe(1);
   });
 });
 

@@ -161,8 +161,8 @@ test.describe('phone', () => {
   test('every panel has its own boxed dice (A, B, Both) that fit; a low roll changes less than a high one', async ({ page }) => {
     await openSynth(page, { dev: false });
     const m = await page.evaluate(() => [...document.querySelectorAll('.dbox')].map(b => ({ scope: b.dataset.scope, caps: [...b.querySelectorAll('.dcap')].map(c => c.textContent), faces: [...b.querySelectorAll('.face')].map(f => f.children.length) })));
-    expect(m).toEqual(['synth', 'amp', 'fx', 'seq'].map(scope => ({ scope, caps: ['A', 'B', 'Both'], faces: [1, 2, 3] })));   // one and two make three
-    for (const t of ['synth', 'amp', 'fx', 'seq']) {   // each tab's panel fits the phone with no sideways scroll, and the page itself doesn't scroll
+    expect(m).toEqual(['synth', 'filt', 'amp', 'fx', 'seq'].map(scope => ({ scope, caps: ['A', 'B', 'Both'], faces: [1, 2, 3] })));   // one and two make three
+    for (const t of ['synth', 'filt', 'amp', 'fx', 'seq']) {   // each tab's panel fits the phone with no sideways scroll, and the page itself doesn't scroll
       await page.locator(`[data-tab="${t}"]`).tap();
       const f = await page.evaluate(t => { const r = document.querySelector(`.panel[data-panel="${t}"] .dbox`).getBoundingClientRect(); return { right: r.right <= innerWidth, page: document.documentElement.scrollHeight <= innerHeight + 1 }; }, t);
       expect(f).toEqual({ right: true, page: true });

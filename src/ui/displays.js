@@ -1,5 +1,12 @@
 /* ---------- wave displays ---------- */
-const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+/* css(name): a token's value for a canvas. The neutrals are mixes with the colour heard now (styles/base.css), so they are
+   read as a resolved colour through a probe element; the scheme's own colours and the fonts are read as written. */
+const cssProbe = document.createElement('i'); cssProbe.style.display = 'none'; document.documentElement.appendChild(cssProbe);
+const CSS_RAW = new Set(['--a', '--b', '--font-mono', '--font-ui', '--font-head', '--hold']);
+const css = name => {
+  if (CSS_RAW.has(name)) return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  cssProbe.style.color = `var(${name})`; return getComputedStyle(cssProbe).color;
+};
 const W = { fa:[new Float32Array(513), new Float32Array(513)], fb:[new Float32Array(513), new Float32Array(513)],
             fr:[new Float32Array(513), new Float32Array(513)], sR:new Float32Array(256), sI:new Float32Array(256), out:new Float32Array(256) };
 function synthDisplay(re, im) { MorphEngine.synth(re, im, 64, 256, W.out, W.sR, W.sI); return W.out; }

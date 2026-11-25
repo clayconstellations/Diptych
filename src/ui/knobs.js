@@ -111,7 +111,7 @@ function updateKnob(i) {
     document.querySelectorAll(`[data-sw="${i}"]`).forEach(b => { const v = Math.round(state[b.dataset.side][i]); b.setAttribute('aria-pressed', b.dataset.v === undefined ? v === 1 : +b.dataset.v === v); });
     return;
   }
-  const d = DEFS[i], a = state.A[i], b = state.B[i], c = state.C[i], r = d.seq || d.pair ? a : resolveNorm(i);   // a side's own setting (seq) doesn't morph
+  const d = DEFS[i], a = state.A[i], b = state.B[i], c = state.C[i], own = d.seq || d.pair, r = own ? quant(d, a + (b - a) * state.morph) : resolveNorm(i);   // a side's own setting (Position, Density, Octave) has no curve: its reading passes straight from A's to B's with the morph (2026-11-25)
   setArc($('arcA' + i), a, r);
   setArc($('arcB' + i), r, b);
   const [ax, ay] = pt(a), [bx, by] = pt(b), [nx, ny] = pt(r);
@@ -123,7 +123,7 @@ function updateKnob(i) {
   // Linked (or single-side) parameters don't morph: one handle, one value, no curve
   const linked = isLinked(i), kn = $('k' + i), F = focusSide(i);
   kn.classList.toggle('kl-A', d.single === 'A'); kn.classList.toggle('kl-B', d.single === 'B'); kn.classList.toggle('kl-L', linked && !d.single);
-  $('now' + i).setAttribute('r', linked || d.seq || d.pair ? 0 : 3.4);
+  $('now' + i).setAttribute('r', linked ? 0 : 3.4);
   $('hB' + i).style.display = linked ? 'none' : '';
   $('hB' + i).setAttribute('tabindex', linked ? -1 : 0);
   $('c' + i).setAttribute('tabindex', linked || d.seq || d.pair ? -1 : 0);
@@ -182,11 +182,9 @@ function updateKnob(i) {
     $('va' + i).classList.toggle('muted', !d.single);
   } else {
     v.className = 'kval' + (ed === 'A' ? ' a' : ed === 'B' ? ' b' : '');
-    v.textContent = ed === 'A' ? 'A ' + valText(i, a) : ed === 'B' ? 'B ' + valText(i, b) : ed === 'C' ? fmtCurve(c) : d.seq || d.pair ? '\u00a0' : valText(i, r);
+    v.textContent = ed === 'A' ? 'A ' + valText(i, a) : ed === 'B' ? 'B ' + valText(i, b) : ed === 'C' ? fmtCurve(c) : valText(i, r);   // one reading: what is heard now, or the side being set while its dot is held
     $('va' + i).textContent = valText(i, a); $('va' + i).classList.remove('muted');
     $('vb' + i).textContent = valText(i, b);
-    // a side's own setting (Position, Density, Speed, Octave) has no single heard value: its line shows both sides
-    if ((d.seq || d.pair) && !ed) { v.innerHTML = `<span class="a">${valText(i, a)}</span> <span class="b">${valText(i, b)}</span>`; $('va' + i).textContent = ''; $('vb' + i).textContent = ''; }
   }
 
   // accessibility
@@ -327,9 +325,9 @@ DEFS.forEach((d, i) => { if (!d.opts) bindKnob(i); });
    sequencer's knobs move into the panels (Synth, Amp, Filt, FX, Seq), and the Sound and Sequence cards go away. */
 {
   const put = (box, keys) => keys.forEach(k => $(box).appendChild($('k' + IX[k]).closest('.kn')));
-  put('pk_synth', ['wpos', 'mbright', 'o1.unison', 'glide', 'cutoff', 'reso', 'envamt', 'mode']); put('pk_amp', ['aatk', 'adec', 'asus', 'arel', 'menv']); $('k' + IX.menv).closest('.kn').style.display = 'none';   // the Envelope macro is hidden and rests at 50%
+  put('pk_synth', ['wpos', 'mbright', 'o1.unison', 'glide']); put('pk_filt', ['cutoff', 'reso', 'envamt', 'mode']); put('pk_amp', ['aatk', 'adec', 'asus', 'arel', 'menv']); $('k' + IX.menv).closest('.kn').style.display = 'none';   // the Envelope macro is hidden and rests at 50%
   put('pk_fx', ['mfx', 'mwet', 'dmix', 'mmix', 'dlmix', 'rvmix']); put('pk_seq', ['pattern', 'sqdens', 'sqoct', 'sqswing', 'sqgate', 'sqspeed']);
-  for (const [k, name] of [['dmix', 'Drive'], ['mmix', 'Mod'], ['dlmix', 'Delay'], ['rvmix', 'Reverb']]) $('k' + IX[k]).closest('.kn').querySelector('.kname').textContent = name;   // four mixes side by side need their effect's name
+  for (const [k, name] of [['mfx', 'Intensity'], ['mwet', 'Wet'], ['dmix', 'Drive'], ['mmix', 'Mod'], ['dlmix', 'Delay'], ['rvmix', 'Reverb']]) $('k' + IX[k]).closest('.kn').querySelector('.kname').textContent = name;   // four mixes side by side need their effect's name
  $('k' + IX.sqspeed).closest('.kn').style.display = 'none';   // Speed is fixed at 1x and its knob hidden (2026-11-23)
   $('patKnob').remove();
   for (const g of ['Sound', 'Sequence']) { if (sections[g]) { sections[g].remove(); delete sections[g]; } }

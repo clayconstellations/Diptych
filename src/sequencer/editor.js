@@ -50,8 +50,11 @@ $('sqLenUp').addEventListener('click', () => editSeq(s => { if (s.n16 < MAXSTEPS
 ['pointerdown', 'keydown'].forEach(t => $('sqDens').addEventListener(t, () => pushUndo()));
 $('sqDens').addEventListener('input', () => { setParam(sqSide, IX.sqdens, $('sqDens').value / 100); $('sqDensVal').textContent = $('sqDens').value + '%'; });
 // shift the whole pattern one step, wrapping around the loop
-$('sqLeft').addEventListener('click', () => editSeq(s => { s.steps.push(s.steps.shift()); s.rot = (s.rot - 1 + s.steps.length) % s.steps.length; }));
-$('sqRight').addEventListener('click', () => editSeq(s => { s.steps.unshift(s.steps.pop()); s.rot = (s.rot + 1) % s.steps.length; }));
+function rotateSeq(s, dir) { if (dir < 0) s.steps.push(s.steps.shift()); else s.steps.unshift(s.steps.pop()); s.rot = ((s.rot || 0) + dir + s.steps.length) % s.steps.length; }
+$('sqLeft').addEventListener('click', () => editSeq(s => rotateSeq(s, -1)));
+$('sqRight').addEventListener('click', () => editSeq(s => rotateSeq(s, 1)));
+// the Seq tab's arrows beside lanes A and B shift that side's pattern a step, so you can watch what it does to Now (2026-11-25)
+document.querySelectorAll('[data-rot]').forEach(b => b.addEventListener('click', () => { pushUndo(); rotateSeq(state.seq[b.dataset.rot], +b.dataset.dir); if (sq.classList.contains('open')) syncSeqControls(); seqChanged(); }));
 let genType = 'Arp';
 function setGen(t) {
   genType = t;

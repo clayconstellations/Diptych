@@ -283,3 +283,71 @@ test('a side preset never changes which table a side reads, so the other end of 
   });
   expect(r.first).toBe(0); expect(r.second).toBeGreaterThan(2000); expect(r.shorter).toBe(true);   // half a sixteenth at 120 bpm is 3000 samples
 });
+
+test('six tabs; the pictures are the same size on every tab; one reading under each knob, and it follows the morph', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 720 });
+  await openSynth(page, { dev: false });
+  const sizes = [];
+  for (const t of ['synth', 'filt', 'amp', 'fx', 'seq']) {
+    await page.locator(`[data-tab="${t}"]`).click();
+    sizes.push(await page.evaluate(() => { const p = document.querySelector('.panel.on'), r = p.querySelector('.pviz').getBoundingClientRect();
+      return { h: Math.round(r.height), fits: p.scrollHeight <= p.clientHeight + 1, ab: [...p.querySelectorAll('.kab')].filter(k => k.offsetParent).length }; }));
+  }
+  expect(new Set(sizes.map(s => s.h)).size).toBe(1);
+  expect(sizes[0].h).toBeGreaterThan(120);
+  expect(sizes.every(s => s.fits && s.ab === 0)).toBe(true);
+  // Density is each side's own setting: its reading passes from A's value to B's as the morph moves
+  await page.locator('[data-tab="seq"]').click();
+  const read = m => page.evaluate(m => { state.A[IX.sqdens] = 1; state.B[IX.sqdens] = 0.5; state.links.sqdens = false; setMorph(m); refreshAll(); return [$('v' + IX.sqdens).textContent, $('now' + IX.sqdens).getAttribute('r')]; }, m);
+  expect(await read(0)).toEqual(['100%', '3.4']); expect(await read(0.5)).toEqual(['75%', '3.4']); expect(await read(1)).toEqual(['50%', '3.4']);
+  // desktop: all six at once, the five pictures the same size
+  await page.setViewportSize({ width: 1280, height: 800 }); await page.waitForTimeout(250);
+  const d = await page.evaluate(() => ['synth', 'filt', 'amp', 'fx', 'seq'].map(t => Math.round(document.querySelector(`.panel[data-panel="${t}"] .pviz`).getBoundingClientRect().height)));
+  expect(new Set(d).size).toBe(1);
+});
+
+test('the Filt dice roll only the filter; the Synth dice leave the filter and the pitch alone; a saved Synth lock covers the filter', async ({ page }) => {
+  await openSynth(page, { dev: false });
+  const r = await page.evaluate(() => {
+    const out = {};
+    for (const part of ['filt', 'synth']) {
+      const A0 = state.A.slice(), B0 = state.B.slice(); rollPart(part, 'M', 1);
+      const ch = DEFS.filter((d, i) => state.A[i] !== A0[i] || state.B[i] !== B0[i]).map(d => d.key);
+      out[part] = { n: ch.length, filt: ch.filter(k => FILT_KEYS.has(k)).length };
+    }
+    let off = 0;
+    for (let k = 0; k < 30; k++) { rollPart('synth', 'M', 1); rollAll(1); for (const key of ['pitch', 'fine']) for (const s of ['A', 'B']) if (MorphEngine.denorm(DEFS[oi(0, key)], state[s][oi(0, key)]) !== 0) off++; }
+    return { ...out, off };
+  });
+  expect(r.filt.n).toBeGreaterThan(0); expect(r.filt.n).toBe(r.filt.filt);
+  expect(r.synth.n).toBeGreaterThan(0); expect(r.synth.filt).toBe(0);
+  expect(r.off).toBe(0);
+  const saved = await page.evaluate(() => { const s = JSON.parse(localStorage.getItem('diptych-v5')); s.ver = 4; s.panelLocks = { synth: true }; return JSON.stringify(s); });
+  await openSynth(page, { dev: false, storage: { 'diptych-v5': saved } });
+  expect(await page.evaluate(() => [state.panelLocks.synth, state.panelLocks.filt])).toEqual([true, true]);
+});
+
+test('Seq: the arrows beside lanes A and B shift that side only, as one undo step; sheets sit in the middle; the neutrals follow the colour heard', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 720 });
+  await openSynth(page, { dev: false });
+  await page.locator('[data-tab="seq"]').click();
+  const notes = () => page.evaluate(() => ['A', 'B'].map(k => state.seq[k].steps.map(s => s.note + (s.on ? 'x' : '-')).join()));
+  const n0 = await notes();
+  await page.locator('[data-rot="A"][data-dir="1"]').click();
+  const n1 = await notes();
+  expect(n1[1]).toBe(n0[1]);
+  expect(n1[0]).toBe(await page.evaluate(a => { const x = a.split(','); x.unshift(x.pop()); return x.join(); }, n0[0]));
+  await page.locator('[data-rot="A"][data-dir="-1"]').click();
+  expect(await notes()).toEqual(n0);
+  await page.locator('[data-rot="B"][data-dir="-1"]').click();
+  expect((await notes())[0]).toBe(n0[0]);
+  await page.locator('#undo').click();
+  expect(await notes()).toEqual(n0);
+  await page.locator('#setBtn').click();
+  const c = await page.evaluate(() => { const r = document.querySelector('#settings .sheetcard').getBoundingClientRect(); return [r.top, innerHeight - r.bottom, r.top >= 0]; });
+  expect(Math.abs(c[0] - c[1])).toBeLessThan(2); expect(c[2]).toBe(true);
+  await page.locator('#setDone').click();
+  const cols = await page.evaluate(() => [0, 1].map(m => { setMorph(m); return [getComputedStyle(document.querySelector('.panel.on')).backgroundColor, css('--line')]; }));
+  expect(cols[0][0]).not.toBe(cols[1][0]); expect(cols[0][1]).not.toBe(cols[1][1]);
+  expect(cols[0][1]).toMatch(/^(rgb|oklab|oklch|color)\(/);
+});
