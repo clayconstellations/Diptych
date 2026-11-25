@@ -351,3 +351,12 @@ test('Seq: the arrows beside lanes A and B shift that side only, as one undo ste
   expect(cols[0][0]).not.toBe(cols[1][0]); expect(cols[0][1]).not.toBe(cols[1][1]);
   expect(cols[0][1]).toMatch(/^(rgb|oklab|oklch|color)\(/);
 });
+
+test('Pitch and Fine are in no view and are held at 0, whatever a saved patch says', async ({ page }) => {
+  await openSynth(page);
+  const saved = await page.evaluate(async () => { save(); await new Promise(r => setTimeout(r, 600)); const s = JSON.parse(localStorage.getItem('diptych-v5')); const i = s.ids.indexOf('o1.pitch'), j = s.ids.indexOf('o1.fine'); s.A[i] = 0.75; s.B[j] = 0.2; return JSON.stringify(s); });
+  await openSynth(page, { storage: { 'diptych-v5': saved } });
+  const r = await page.evaluate(() => { for (let k = 0; k < 5; k++) rollAll(1); applyBulk(() => {});
+    return { vals: ['pitch', 'fine'].flatMap(key => ['A', 'B'].map(s => MorphEngine.denorm(DEFS[oi(0, key)], state[s][oi(0, key)]))), shown: ['pitch', 'fine'].map(key => !!$('k' + oi(0, key)).offsetParent) }; });
+  expect(r.vals.every(v => Math.abs(v) < 1e-9)).toBe(true); expect(r.shown).toEqual([false, false]);
+});

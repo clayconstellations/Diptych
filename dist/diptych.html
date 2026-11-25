@@ -3116,6 +3116,10 @@ DEFS.forEach((d, i) => { if (!d.opts) bindKnob(i); });
   for (const [k, name] of [['mfx', 'Intensity'], ['mwet', 'Wet'], ['dmix', 'Drive'], ['mmix', 'Mod'], ['dlmix', 'Delay'], ['rvmix', 'Reverb']]) $('k' + IX[k]).closest('.kn').querySelector('.kname').textContent = name;   // four mixes side by side need their effect's name
  $('k' + IX.sqspeed).closest('.kn').style.display = 'none';   // Speed is fixed at 1x and its knob hidden (2026-11-23)
   $('patKnob').remove();
+  /* Pitch and Fine are not controls at all (2026-11-25): their knobs are kept out of every view (in a hidden box, so the
+     code that redraws knobs still finds them) and tuneZero() holds them at 0 whatever a saved patch or preset says */
+  { const box = document.createElement('div'); box.hidden = true; box.id = 'knHidden'; document.body.appendChild(box);
+    DEFS.forEach((d, i) => { if (d.kind === 'osc' && d.eng === 'wt' && (d.key === 'pitch' || d.key === 'fine')) box.appendChild($('k' + i).closest('.kn')); }); }
   for (const g of ['Sound', 'Sequence']) { if (sections[g]) { sections[g].remove(); delete sections[g]; } }
 }
 document.addEventListener('click', e => {
@@ -3127,7 +3131,9 @@ document.addEventListener('click', e => {
 
 
 // Position follows the two table positions after anything that sets them directly (randomize, undo, loading)
+function tuneZero() { DEFS.forEach((d, i) => { if (d.kind === 'osc' && d.eng === 'wt' && (d.key === 'pitch' || d.key === 'fine')) state.A[i] = state.B[i] = MorphEngine.norm(d, 0); }); }
 function syncPair() {
+  tuneZero();
   const w = IX.wpos; if (w === undefined) return;
   if (state.links.wpos) state.A[oi(0, 'posB')] = state.B[oi(0, 'posB')] = state.A[oi(0, 'posA')];   // linked: one position for both tables
   state.A[w] = state.A[oi(0, 'posA')]; state.B[w] = state.A[oi(0, 'posB')];
@@ -4227,10 +4233,10 @@ updateSamplerUI();
    Harmonics control and the filter, with the four macros applied), and the
    effects each leave a fitting mark on it, scaled by how much of them is heard:
      Drive       the wave is shaped by the same kind of curve (soft clip, then folding)
-     Formant     the harmonics near the vowel's resonances are lifted, and three beams of light stand at the resonances
+     Formant     the harmonics near the vowel's resonances are lifted, and the vowel's response rises from the floor as a hologram with three peaks
      Modulation  strands wind around the wave in a helix that turns at the modulation rate
      Delay       echoes leave the wave and travel into the distance in the delay's time (ping-pong: left and right in turn)
-     Reverb      the wave glows and stands on a floor in perspective that mirrors it (2026-11-25: these four redrawn in depth)
+     Reverb      the wave glows and sheds a cloud of dust that drifts into the space around it (2026-11-25: these four redrawn in depth)
      Lo-fi       steps in level (Character), sample-and-hold (Codec), a wobble (Wow, Flutter), specks (Noise)
      OTT         the wave is squashed toward full height and the line thickens
    Time-based marks (Modulation, Wow, Flutter, Noise) animate while something can be heard.
@@ -4324,38 +4330,41 @@ function drawWaveOn(cv, withFx, now) {
   g.beginPath(); g.rect(mid0 - gap / 2, 0, midW + gap, H); g.clip();
   g.lineJoin = 'round'; g.lineCap = 'round';
   const rv = Math.min(1, fx.reverb * 1.6);
-  /* reverb: the wave stands in a room. A floor in perspective runs from the middle line to the bottom (deeper, with more
-     lines, as Size grows; its lines drift toward you), and the wave is mirrored on it (longer Decay, a stronger mirror) */
+  /* reverb (second version, 2026-11-25): the wave sheds a cloud of dust that drifts off into the space around it. Each mote
+     is born on the line, travels outward and toward or away from you (nearer ones are larger, brighter and faster, and
+     leave a short streak), and fades over its life: more of them with Mix, further with Size, longer-lived with Decay. */
   if (fx.reverb > 0.01) {
-    g.strokeStyle = colM; g.lineWidth = 1;
-    const rows = 3 + Math.round(fx.rvsize * 7), scroll = (t * 0.22) % 1;
-    for (let j = 0; j <= rows; j++) {
-      const z = 1 + j - scroll; if (z < 1) continue;
-      g.globalAlpha = 0.5 * rv * (1 - (z - 1) / (rows + 0.001)); const y = m + (H - m) / z;
-      g.beginPath(); g.moveTo(mid0, y); g.lineTo(mid0 + midW, y); g.stroke();
+    const dk = Math.min(1, Math.log(fx.rvdecay / 0.2) / Math.log(100)), life = 1.6 + 4 * dk, cnt = Math.round(50 + 170 * rv), reach = H * (0.22 + 0.5 * fx.rvsize);
+    const hsh = q => { const x = Math.sin(q * 127.1) * 43758.5453; return x - Math.floor(x); };
+    g.strokeStyle = colM; g.fillStyle = colM;
+    for (let k = 0; k < cnt; k++) {
+      const r1 = hsh(k + 1), r2 = hsh(k + 101.3), r3 = hsh(k + 211.7), r4 = hsh(k + 307.9);
+      const age = (t / (life * (0.6 + 0.8 * r4)) + r1) % 1, z = 0.35 + 0.65 * r3, i0 = Math.floor(r2 * n);
+      const dir = (r4 - 0.5) * 2.4, dist = reach * z * (1 - Math.pow(1 - age, 2)), up = r1 < 0.5 ? -1 : 1;
+      const x = mid0 + i0 / n * midW + Math.sin(dir) * dist * 0.9 + (r3 - 0.5) * 6, y = m - yAt(i0, wob) * amp + up * Math.cos(dir) * dist;
+      const al = rv * (0.25 + 0.75 * z) * Math.pow(1 - age, 1.4) * Math.min(1, age * 12), sz = 0.7 + 2.1 * z;
+      if (al < 0.02) continue;
+      g.globalAlpha = al * 0.5; g.lineWidth = sz * 0.8;   // the streak back along its path
+      g.beginPath(); g.moveTo(x, y); g.lineTo(x - Math.sin(dir) * 5 * z * (1 - age), y - up * Math.cos(dir) * 7 * z * (1 - age)); g.stroke();
+      g.globalAlpha = al; g.beginPath(); g.arc(x, y, sz / 2, 0, 6.2832); g.fill();
     }
-    for (let k = -9; k <= 9; k++) {
-      g.globalAlpha = 0.28 * rv * (1 - Math.abs(k) / 11);
-      g.beginPath(); g.moveTo(vx + k * midW * 0.012, m + (H - m) / (rows + 1)); g.lineTo(vx + k * midW * 0.16, H); g.stroke();
-    }
-    const dk = Math.min(1, Math.log(fx.rvdecay / 0.2) / Math.log(100));
-    g.globalAlpha = rv * (0.2 + 0.35 * dk); g.lineWidth = 2; g.shadowColor = colM; g.shadowBlur = 4 + 8 * fx.rvsize;
-    path(0, -(0.25 + 0.2 * dk), 0, (H - m) * 0.55); g.stroke(); g.shadowBlur = 0;
-  } else { g.strokeStyle = css('--line'); g.lineWidth = 1; g.beginPath(); g.moveTo(mid0, m); g.lineTo(mid0 + midW, m); g.stroke(); }
-  /* formant: three beams of light stand where the vowel's resonances are (low to high across the picture, as the Vowel
-     moves them), narrower with more Resonance, each with a bright core and a marker top and bottom */
+  }
+  g.globalAlpha = 1; g.strokeStyle = css('--line'); g.lineWidth = 1; g.beginPath(); g.moveTo(mid0, m); g.lineTo(mid0 + midW, m); g.stroke();
+  /* formant (second version, 2026-11-25): the vowel's response rises from the floor as a hologram, three peaks where its
+     resonances are (low to high across the picture; the Vowel moves them, Resonance sharpens them, Mix raises them), drawn
+     in scan lines with a bright edge and two fainter copies behind it for depth */
   if (fx.formant > 0.01) {
-    const fa = Math.min(1, fx.formant * 1.5), lo = Math.log(380), hi = Math.log(3600);
-    [700 + 500 * fx.fvowel, 1200 + 1000 * (1 - fx.fvowel), 2600].forEach((f, k) => {
-      const x = mid0 + midW * (Math.log(f) - lo) / (hi - lo), bw = (7 + 26 * (1 - fx.freso)) * (1 - k * 0.12);
-      g.fillStyle = colM;
-      for (let q = 1; q <= 5; q++) {   // a soft cone, wider toward the floor
-        const w0 = bw * 0.45 * q / 5, w1 = bw * 1.25 * q / 5; g.globalAlpha = 0.085 * fa;
-        g.beginPath(); g.moveTo(x - w0, 0); g.lineTo(x + w0, 0); g.lineTo(x + w1, H); g.lineTo(x - w1, H); g.closePath(); g.fill();
-      }
-      g.globalAlpha = 0.75 * fa; g.fillRect(x - 0.6, 0, 1.2, H);
-      g.globalAlpha = fa; for (const [y0, d] of [[0, 1], [H, -1]]) { g.beginPath(); g.moveTo(x - 5, y0); g.lineTo(x + 5, y0); g.lineTo(x, y0 + d * 6); g.closePath(); g.fill(); }
-    });
+    const fa = Math.min(1, fx.formant * 1.5), lo = Math.log(380), hi = Math.log(3600), wd = 0.05 + 0.15 * (1 - fx.freso);
+    const pk = [700 + 500 * fx.fvowel, 1200 + 1000 * (1 - fx.fvowel), 2600].map(Math.log), hts = [1, 0.85, 0.6];
+    const resp = u => { const lf = lo + u * (hi - lo); let r = 0.06; pk.forEach((c, k) => { r = Math.max(r, hts[k] * Math.exp(-(((lf - c) / wd) ** 2))); }); return r; };
+    const shape = (dx, dy) => { g.beginPath(); g.moveTo(mid0 + dx, H + dy); for (let k = 0; k <= 120; k++) g.lineTo(mid0 + dx + k / 120 * midW, H + dy - resp(k / 120) * H * 0.62 * fa); g.lineTo(mid0 + midW + dx, H + dy); g.closePath(); };
+    g.strokeStyle = colM; g.fillStyle = colM; g.lineWidth = 1;
+    for (const d of [2, 1]) { g.globalAlpha = 0.16 * fa / d; shape(d * 7, -d * 5); g.fill(); g.globalAlpha = 0.3 * fa / d; g.stroke(); }
+    g.save(); shape(0, 0); g.clip();
+    g.globalAlpha = 0.16 * fa; g.fillRect(mid0, 0, midW, H);
+    g.globalAlpha = 0.42 * fa; for (let y = H - 1; y > H * 0.3; y -= 3) g.fillRect(mid0, y, midW, 1);
+    g.restore();
+    g.globalAlpha = 0.95 * fa; g.lineWidth = 1.6; shape(0, 0); g.stroke();
   }
   /* delay: the echoes leave the wave and travel into the distance, one every repeat (at the delay's own time), smaller and
      fainter as they go (further with more Feedback); Ping-pong sends them left and right in turn */
@@ -4499,7 +4508,7 @@ function drawEnvPanel() {
 }
 
 /* the filter: where the cutoff goes over a held note (a low C), from note-on through the filter envelope to the release,
-   on a log frequency scale; Resonance shows as the glow under the line. Side A thin blue, side B thin pink, what you
+   on a log frequency scale; Resonance makes the line a thicker, lit tube. Side A thin blue, side B thin pink, what you
    hear now thick in the morph colour. */
 function drawFiltPanel() {
   const c = prep($('filtviz')); if (!c) return;
@@ -4519,12 +4528,20 @@ function drawFiltPanel() {
   for (const s of [0, 1, 2]) {
     const e = sets[s], path = [];
     for (let k = 0; k <= 200; k++) { const t = k / 200; path.push([pad + 22 + t * (c.w - 2 * pad - 22), yOf(e.cutoff * Math.pow(2, e.envamt * 5 * lvl(e, t * T)))]); }
-    if (s === 2) {   // resonance: a glow under the line, stronger with more resonance
-      g.save(); g.globalAlpha = 0.18 + 0.5 * e.reso; g.strokeStyle = cols[2]; g.lineWidth = 6 + 18 * e.reso; g.filter = 'blur(6px)';
-      g.beginPath(); path.forEach(([x, y], k) => (k ? g.lineTo(x, y) : g.moveTo(x, y))); g.stroke(); g.restore();
+    const line = (dx, dy) => { g.beginPath(); path.forEach(([x, y], k) => (k ? g.lineTo(x + dx, y + dy) : g.moveTo(x + dx, y + dy))); g.stroke(); };
+    g.lineJoin = 'round'; g.lineCap = 'round';
+    if (s === 2) {
+      /* Resonance makes the line a solid tube (2026-11-25, in place of the glow): it thickens with Resonance and is lit from
+         above, with a shadow cast on the picture, a shaded underside, a soft highlight and a thin bright glint */
+      const w = 3.4 + 13 * e.reso, k3 = Math.min(1, e.reso * 2.5);
+      g.globalAlpha = 0.22 * k3; g.strokeStyle = '#000'; g.lineWidth = w; line(2 + w * 0.15, 2 + w * 0.45);
+      g.globalAlpha = 1; g.strokeStyle = cols[2]; g.lineWidth = w; line(0, 0);
+      g.globalAlpha = 0.3 * k3; g.strokeStyle = '#000'; g.lineWidth = w * 0.42; line(0, w * 0.26);
+      g.globalAlpha = 0.5 * k3; g.strokeStyle = '#fff'; g.lineWidth = w * 0.26; line(0, -w * 0.18);
+      g.globalAlpha = 0.9 * k3; g.lineWidth = Math.max(0.8, w * 0.07); line(0, -w * 0.25);
+      continue;
     }
-    g.strokeStyle = cols[s]; g.lineWidth = widths[s]; g.globalAlpha = alpha[s]; g.lineJoin = 'round'; g.lineCap = 'round';
-    g.beginPath(); path.forEach(([x, y], k) => (k ? g.lineTo(x, y) : g.moveTo(x, y))); g.stroke();
+    g.strokeStyle = cols[s]; g.lineWidth = widths[s]; g.globalAlpha = alpha[s]; line(0, 0);
   }
   g.globalAlpha = 1;
   if (notesMoving()) { const e = sets[2], p = envPos(e.fatk, e.fdec, e.fsus, e.frel, hold); if (!p.done && p.t <= T) playDot(g, pad + 22 + p.t / T * (c.w - 2 * pad - 22), yOf(e.cutoff * Math.pow(2, e.envamt * 5 * p.v)), cols[2]); }

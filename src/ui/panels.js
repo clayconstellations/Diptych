@@ -70,7 +70,7 @@ function drawEnvPanel() {
 }
 
 /* the filter: where the cutoff goes over a held note (a low C), from note-on through the filter envelope to the release,
-   on a log frequency scale; Resonance shows as the glow under the line. Side A thin blue, side B thin pink, what you
+   on a log frequency scale; Resonance makes the line a thicker, lit tube. Side A thin blue, side B thin pink, what you
    hear now thick in the morph colour. */
 function drawFiltPanel() {
   const c = prep($('filtviz')); if (!c) return;
@@ -90,12 +90,20 @@ function drawFiltPanel() {
   for (const s of [0, 1, 2]) {
     const e = sets[s], path = [];
     for (let k = 0; k <= 200; k++) { const t = k / 200; path.push([pad + 22 + t * (c.w - 2 * pad - 22), yOf(e.cutoff * Math.pow(2, e.envamt * 5 * lvl(e, t * T)))]); }
-    if (s === 2) {   // resonance: a glow under the line, stronger with more resonance
-      g.save(); g.globalAlpha = 0.18 + 0.5 * e.reso; g.strokeStyle = cols[2]; g.lineWidth = 6 + 18 * e.reso; g.filter = 'blur(6px)';
-      g.beginPath(); path.forEach(([x, y], k) => (k ? g.lineTo(x, y) : g.moveTo(x, y))); g.stroke(); g.restore();
+    const line = (dx, dy) => { g.beginPath(); path.forEach(([x, y], k) => (k ? g.lineTo(x + dx, y + dy) : g.moveTo(x + dx, y + dy))); g.stroke(); };
+    g.lineJoin = 'round'; g.lineCap = 'round';
+    if (s === 2) {
+      /* Resonance makes the line a solid tube (2026-11-25, in place of the glow): it thickens with Resonance and is lit from
+         above, with a shadow cast on the picture, a shaded underside, a soft highlight and a thin bright glint */
+      const w = 3.4 + 13 * e.reso, k3 = Math.min(1, e.reso * 2.5);
+      g.globalAlpha = 0.22 * k3; g.strokeStyle = '#000'; g.lineWidth = w; line(2 + w * 0.15, 2 + w * 0.45);
+      g.globalAlpha = 1; g.strokeStyle = cols[2]; g.lineWidth = w; line(0, 0);
+      g.globalAlpha = 0.3 * k3; g.strokeStyle = '#000'; g.lineWidth = w * 0.42; line(0, w * 0.26);
+      g.globalAlpha = 0.5 * k3; g.strokeStyle = '#fff'; g.lineWidth = w * 0.26; line(0, -w * 0.18);
+      g.globalAlpha = 0.9 * k3; g.lineWidth = Math.max(0.8, w * 0.07); line(0, -w * 0.25);
+      continue;
     }
-    g.strokeStyle = cols[s]; g.lineWidth = widths[s]; g.globalAlpha = alpha[s]; g.lineJoin = 'round'; g.lineCap = 'round';
-    g.beginPath(); path.forEach(([x, y], k) => (k ? g.lineTo(x, y) : g.moveTo(x, y))); g.stroke();
+    g.strokeStyle = cols[s]; g.lineWidth = widths[s]; g.globalAlpha = alpha[s]; line(0, 0);
   }
   g.globalAlpha = 1;
   if (notesMoving()) { const e = sets[2], p = envPos(e.fatk, e.fdec, e.fsus, e.frel, hold); if (!p.done && p.t <= T) playDot(g, pad + 22 + p.t / T * (c.w - 2 * pad - 22), yOf(e.cutoff * Math.pow(2, e.envamt * 5 * p.v)), cols[2]); }
