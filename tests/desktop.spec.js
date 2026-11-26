@@ -48,7 +48,7 @@ test('the Basic view comes out larger than the Full view', async ({ page }) => {
 test('knobs still drag when the layout is scaled down', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await openSynth(page, { dev: false });
-  const i = await page.evaluate(() => IX.mbright);   // A and B are set apart below, so the A handle is unambiguous
+  const i = await page.evaluate(() => IX.cutoff);   // A and B are set apart below, so the A handle is unambiguous
   await page.evaluate(i => { state.A[i] = 0.3; state.B[i] = 0.8; updateKnob(i); }, i);
   const before = await page.evaluate(i => state.A[i], i);
   const box = await page.locator(`#hA${i}`).boundingBox();

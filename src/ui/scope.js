@@ -5,12 +5,13 @@
    Harmonics control and the filter, with the four macros applied), and the
    effects each leave a fitting mark on it, scaled by how much of them is heard:
      Drive       the wave is shaped by the same kind of curve (soft clip, then folding)
-     Formant     the harmonics near the vowel's resonances are lifted, and the vowel's response rises from the floor as a hologram with three peaks
+     Formant     the harmonics near the vowel's resonances are lifted, and a halo around the wave swells at the vowel's three resonances
      Modulation  strands wind around the wave in a helix that turns at the modulation rate
      Delay       echoes leave the wave and travel into the distance in the delay's time (ping-pong: left and right in turn)
      Reverb      the wave glows and sheds a cloud of dust that drifts into the space around it (2026-11-25: these four redrawn in depth)
      Lo-fi       steps in level (Character), sample-and-hold (Codec), a wobble (Wow, Flutter), specks (Noise)
      OTT         the wave is squashed toward full height and the line thickens
+     Unison      (Synth's picture) the detuned voices drift past the wave as fainter copies
    Time-based marks (Modulation, Wow, Flutter, Noise) animate while something can be heard.
    ===================================================================== */
 const scopeEl = $('scope'), fxScopeEl = $('fxscope');
@@ -62,16 +63,18 @@ function fxMarks(v) {
 }
 let scopeT = 0, scopeAnim = 0, scopeQueued = false;
 // the Sound panel's wave is plain; the FX panel's carries the effects' marks (2026-11-11)
-function drawScope(now) { drawWaveOn(scopeEl, false, now); return drawWaveOn(fxScopeEl, true, now); }
+let SCW = null;   // the wave is worked out once per frame and shared by the two pictures
+function drawScope(now) { SCW = null; const a = drawWaveOn(scopeEl, false, now), b = drawWaveOn(fxScopeEl, true, now); SCW = null; return a || b; }
 const NO_FX = { drive: 0, formant: 0, mod: 0, delay: 0, reverb: 0, crush: 0, codec: 0, wow: 0, noise: 0, ott: 0 };
 function drawWaveOn(cv, withFx, now) {
   const c = prep(cv); if (!c) return false;
   const v = heardValues(), fx = withFx ? fxMarks(v) : NO_FX, g = c.g, H = c.h, Wd = c.w;
+  const uni = withFx ? 0 : MAC.val[oi(0, 'unison')];
   const colM = mixColor(state.morph), ink = css('--ink');
   const gap = 6, mid0 = gap, midW = Wd - 2 * gap;   // only the wave heard now (2026-11-10): A and B show when a side is focused or the morph is at an end
   const t = (now || performance.now()) / 1000;
   // the wave heard now, with the effects' marks
-  const { w, pk } = scopeWave(v);
+  const { w, pk } = SCW || (SCW = scopeWave(v));
   const n = SC.n, m = H / 2, amp = (H / 2 - 10) / pk * scopeGain();
   const shape = (x0) => {
     let y = x0;
@@ -122,21 +125,23 @@ function drawWaveOn(cv, withFx, now) {
     }
   }
   g.globalAlpha = 1; g.strokeStyle = css('--line'); g.lineWidth = 1; g.beginPath(); g.moveTo(mid0, m); g.lineTo(mid0 + midW, m); g.stroke();
-  /* formant (second version, 2026-11-25): the vowel's response rises from the floor as a hologram, three peaks where its
-     resonances are (low to high across the picture; the Vowel moves them, Resonance sharpens them, Mix raises them), drawn
-     in scan lines with a bright edge and two fainter copies behind it for depth */
+  /* formant (third version, 2026-11-26): a halo around the wave itself that swells where the vowel's three resonances are
+     (low to high across the picture; the Vowel moves them, Resonance sharpens them, Mix makes the halo taller and
+     brighter). Layered fills, brightest next to the line, no blur. */
   if (fx.formant > 0.01) {
     const fa = Math.min(1, fx.formant * 1.5), lo = Math.log(380), hi = Math.log(3600), wd = 0.05 + 0.15 * (1 - fx.freso);
     const pk = [700 + 500 * fx.fvowel, 1200 + 1000 * (1 - fx.fvowel), 2600].map(Math.log), hts = [1, 0.85, 0.6];
-    const resp = u => { const lf = lo + u * (hi - lo); let r = 0.06; pk.forEach((c, k) => { r = Math.max(r, hts[k] * Math.exp(-(((lf - c) / wd) ** 2))); }); return r; };
-    const shape = (dx, dy) => { g.beginPath(); g.moveTo(mid0 + dx, H + dy); for (let k = 0; k <= 120; k++) g.lineTo(mid0 + dx + k / 120 * midW, H + dy - resp(k / 120) * H * 0.62 * fa); g.lineTo(mid0 + midW + dx, H + dy); g.closePath(); };
-    g.strokeStyle = colM; g.fillStyle = colM; g.lineWidth = 1;
-    for (const d of [2, 1]) { g.globalAlpha = 0.16 * fa / d; shape(d * 7, -d * 5); g.fill(); g.globalAlpha = 0.3 * fa / d; g.stroke(); }
-    g.save(); shape(0, 0); g.clip();
-    g.globalAlpha = 0.16 * fa; g.fillRect(mid0, 0, midW, H);
-    g.globalAlpha = 0.42 * fa; for (let y = H - 1; y > H * 0.3; y -= 3) g.fillRect(mid0, y, midW, 1);
-    g.restore();
-    g.globalAlpha = 0.95 * fa; g.lineWidth = 1.6; shape(0, 0); g.stroke();
+    const resp = u => { const lf = lo + u * (hi - lo); let r = 0.05; pk.forEach((c, k) => { r = Math.max(r, hts[k] * Math.exp(-(((lf - c) / wd) ** 2))); }); return r; };
+    const K = 96, ys = [], rs = [];
+    for (let k = 0; k <= K; k++) { ys.push(m - yAt(k / K * n, wob) * amp); rs.push(resp(k / K) * H * 0.3 * (0.4 + 0.6 * fa)); }
+    g.fillStyle = colM;
+    for (const L of [1, 0.72, 0.48, 0.28, 0.12]) {
+      g.globalAlpha = 0.13 * fa + 0.05;
+      g.beginPath();
+      for (let k = 0; k <= K; k++) { const x = mid0 + k / K * midW, y = ys[k] - rs[k] * L; k ? g.lineTo(x, y) : g.moveTo(x, y); }
+      for (let k = K; k >= 0; k--) g.lineTo(mid0 + k / K * midW, ys[k] + rs[k] * L);
+      g.closePath(); g.fill();
+    }
   }
   /* delay: the echoes leave the wave and travel into the distance, one every repeat (at the delay's own time), smaller and
      fainter as they go (further with more Feedback); Ping-pong sends them left and right in turn */
@@ -172,13 +177,26 @@ function drawWaveOn(cv, withFx, now) {
     }
   };
   helix(false);
-  // the wave itself; with reverb it glows (wider with Size)
-  g.globalAlpha = 1;
-  if (fx.reverb > 0.01) { g.shadowColor = colM; g.shadowBlur = 6 + 30 * fx.rvsize * rv; }
-  g.strokeStyle = colM; g.lineWidth = 3 + 3 * fx.ott;
+  /* unison (Synth's picture, 2026-11-26): the detuned voices are fainter copies of the wave that drift past it, the ones
+     tuned lower one way and those tuned higher the other; they fade in as the engine brings them in (the inner pair
+     over the first half of the knob, the outer pair over the second) and drift faster the further they are detuned */
+  if (uni > 0.005) {
+    g.strokeStyle = colM;
+    for (const j of [-2, 2, -1, 1]) {
+      const gain = Math.max(0, Math.min(1, uni * 2 - (Math.abs(j) - 1))); if (gain <= 0) continue;
+      g.globalAlpha = 0.4 * gain; g.lineWidth = 1.4;
+      path(j * uni * (10 + t * 9), 1 - 0.05 * Math.abs(j), 0, 0); g.stroke();
+    }
+  }
+  // the wave itself; with reverb it glows (wider with Size): wide faint strokes under the line, no blur (2026-11-26, cheaper)
+  g.strokeStyle = colM;
+  if (fx.reverb > 0.01) {
+    const spread = 6 + 30 * fx.rvsize * rv;
+    path(0, 1, 0, 0);
+    for (const q of [1, 0.82, 0.64, 0.46, 0.28]) { g.globalAlpha = 0.045 + 0.07 * rv * (1 - q); g.lineWidth = 3 + spread * q; g.stroke(); }
+  }
+  g.globalAlpha = 1; g.lineWidth = 3 + 3 * fx.ott;
   path(0, 1, 0, 0); g.stroke();
-  if (fx.reverb > 0.01) { g.globalAlpha = Math.min(0.6, fx.reverb) * 0.25; g.lineWidth = 8 + 16 * fx.rvsize; g.stroke(); }
-  g.shadowBlur = 0; g.globalAlpha = 1;
   helix(true);
   g.globalAlpha = 1;
   // lo-fi noise: specks around the line
@@ -191,7 +209,7 @@ function drawWaveOn(cv, withFx, now) {
     g.globalAlpha = 1;
   }
   g.restore();
-  return fx.mod > 0.01 || fx.wow > 0.01 || fx.noise > 0.01 || fx.delay > 0.01 || fx.reverb > 0.01;
+  return uni > 0.005 || fx.mod > 0.01 || fx.wow > 0.01 || fx.noise > 0.01 || fx.delay > 0.01 || fx.reverb > 0.01;
 }
 // draw now (next frame); while a moving mark is on screen, keep animating at about 30 frames a second
 function drawScopeSoon() {

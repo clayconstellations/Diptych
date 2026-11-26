@@ -70,7 +70,7 @@ function drawEnvPanel() {
 }
 
 /* the filter: where the cutoff goes over a held note (a low C), from note-on through the filter envelope to the release,
-   on a log frequency scale; Resonance makes the line a thicker, lit tube. Side A thin blue, side B thin pink, what you
+   on a log frequency scale (Resonance has no mark of its own, 2026-11-26). Side A thin blue, side B thin pink, what you
    hear now thick in the morph colour. */
 function drawFiltPanel() {
   const c = prep($('filtviz')); if (!c) return;
@@ -92,17 +92,6 @@ function drawFiltPanel() {
     for (let k = 0; k <= 200; k++) { const t = k / 200; path.push([pad + 22 + t * (c.w - 2 * pad - 22), yOf(e.cutoff * Math.pow(2, e.envamt * 5 * lvl(e, t * T)))]); }
     const line = (dx, dy) => { g.beginPath(); path.forEach(([x, y], k) => (k ? g.lineTo(x + dx, y + dy) : g.moveTo(x + dx, y + dy))); g.stroke(); };
     g.lineJoin = 'round'; g.lineCap = 'round';
-    if (s === 2) {
-      /* Resonance makes the line a solid tube (2026-11-25, in place of the glow): it thickens with Resonance and is lit from
-         above, with a shadow cast on the picture, a shaded underside, a soft highlight and a thin bright glint */
-      const w = 3.4 + 13 * e.reso, k3 = Math.min(1, e.reso * 2.5);
-      g.globalAlpha = 0.22 * k3; g.strokeStyle = '#000'; g.lineWidth = w; line(2 + w * 0.15, 2 + w * 0.45);
-      g.globalAlpha = 1; g.strokeStyle = cols[2]; g.lineWidth = w; line(0, 0);
-      g.globalAlpha = 0.3 * k3; g.strokeStyle = '#000'; g.lineWidth = w * 0.42; line(0, w * 0.26);
-      g.globalAlpha = 0.5 * k3; g.strokeStyle = '#fff'; g.lineWidth = w * 0.26; line(0, -w * 0.18);
-      g.globalAlpha = 0.9 * k3; g.lineWidth = Math.max(0.8, w * 0.07); line(0, -w * 0.25);
-      continue;
-    }
     g.strokeStyle = cols[s]; g.lineWidth = widths[s]; g.globalAlpha = alpha[s]; line(0, 0);
   }
   g.globalAlpha = 1;
@@ -140,11 +129,14 @@ function playDot(g, x, y, col) { g.fillStyle = col; g.beginPath(); g.arc(x, y, 5
 /* The Envelope macro left the player's view (2026-11-23). A patch, preset or side that still holds it away from 50% has
    it worked into the envelope times themselves (the same sums the engine did), so it sounds as it did, and the macro
    then rests at 50%. */
-function bakeEnv(k) {
-  const m = IX.menv; if (state[k][m] === 0.5) return;
+function bakeMacro(k, macro) {
+  const m = IX[macro]; if (state[k][m] === 0.5) return;
   for (let i = 0; i < DEFS.length; i++) { MAC.cur[i] = state[k][i]; MAC.val[i] = MorphEngine.denorm(DEFS[i], MAC.cur[i]); }
-  for (const key of ['mbright', 'mfx', 'mwet']) MAC.cur[IX[key]] = 0.5;   // only the Envelope macro
+  for (const key of ['menv', 'mbright', 'mfx', 'mwet']) if (key !== macro) MAC.cur[IX[key]] = 0.5;   // only this macro
   MorphEngine.prototype.applyMacros.call(MAC);
-  for (const key of ['aatk', 'adec', 'asus', 'arel', 'fatk', 'fdec', 'frel']) state[k][IX[key]] = clamp(MAC.macroT[IX[key]]);
+  for (const [key] of MorphEngine.MACRO_RULES[macro]) if (IX[key] !== undefined) state[k][IX[key]] = clamp(MAC.macroT[IX[key]]);
   state[k][m] = 0.5;
 }
+/* Brightness left the player's view too (2026-11-26): the filter's own knobs are on the Filt tab. It is worked into the
+   cutoff, envelope amount, mode, resonance and Harmonics in the same way, and rests at 50%. */
+function bakeEnv(k) { bakeMacro(k, 'menv'); bakeMacro(k, 'mbright'); }

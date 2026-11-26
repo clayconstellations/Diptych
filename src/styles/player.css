@@ -341,3 +341,16 @@ body:not(.desk) #pk_fx .kname{font-size:.52rem;letter-spacing:.02em}
 /* sheets (Settings, Generate, names) sit in the middle of the screen */
 .sheet{align-items:center;padding:12px}
 .sheetcard{border-radius:20px;max-height:100%;overflow-y:auto;padding:16px}
+/* ===== twelfth pass (2026-11-26): smaller pictures, larger knobs, room for the padlock and chain under each knob ===== */
+body:not(.desk) .panel > .knobs{height:136px}
+body:not(.desk) #pk_synth .knob,body:not(.desk) #pk_filt .knob,body:not(.desk) #pk_amp .knob{width:70px;height:70px}
+body:not(.desk) #pk_seq .knob{width:60px;height:60px}
+body:not(.desk) #pk_fx .knob{width:52px;height:52px}
+.desk:not(.dev) .panel > .knobs{height:118px}
+.desk:not(.dev) .panel .knob{width:64px;height:64px}
+.desk:not(.dev) #pk_seq .knob,.desk:not(.dev) #pk_fx .knob{width:56px;height:56px}
+.desk:not(.dev) .pviz{min-height:48px}
+/* the padlock and chain sit below the knob, clear of its ring, with the reading under them */
+body:not(.dev) .panel .kwrap{margin-bottom:20px}
+body:not(.dev) .panel .kwrap .icons{bottom:-21px;gap:6px}
+body:not(.dev) .panel .lock svg{width:15px;height:15px}

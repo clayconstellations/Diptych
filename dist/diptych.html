@@ -782,6 +782,19 @@ body:not(.desk) #pk_fx .kname{font-size:.52rem;letter-spacing:.02em}
 /* sheets (Settings, Generate, names) sit in the middle of the screen */
 .sheet{align-items:center;padding:12px}
 .sheetcard{border-radius:20px;max-height:100%;overflow-y:auto;padding:16px}
+/* ===== twelfth pass (2026-11-26): smaller pictures, larger knobs, room for the padlock and chain under each knob ===== */
+body:not(.desk) .panel > .knobs{height:136px}
+body:not(.desk) #pk_synth .knob,body:not(.desk) #pk_filt .knob,body:not(.desk) #pk_amp .knob{width:70px;height:70px}
+body:not(.desk) #pk_seq .knob{width:60px;height:60px}
+body:not(.desk) #pk_fx .knob{width:52px;height:52px}
+.desk:not(.dev) .panel > .knobs{height:118px}
+.desk:not(.dev) .panel .knob{width:64px;height:64px}
+.desk:not(.dev) #pk_seq .knob,.desk:not(.dev) #pk_fx .knob{width:56px;height:56px}
+.desk:not(.dev) .pviz{min-height:48px}
+/* the padlock and chain sit below the knob, clear of its ring, with the reading under them */
+body:not(.dev) .panel .kwrap{margin-bottom:20px}
+body:not(.dev) .panel .kwrap .icons{bottom:-21px;gap:6px}
+body:not(.dev) .panel .lock svg{width:15px;height:15px}
 </style>
 </head>
 <body>
@@ -1191,7 +1204,7 @@ class MorphEngine {
       switch (r.mode) {
         case 'lerp': x += ((d < 0 ? r.lo : r.hi) - x) * Math.abs(d); break;
         case 'add': x = Math.max(r.lo, Math.min(1, x + d * r.k)); break;
-        case 'mix': if (d < 0) x *= 1 + d * r.f; else if (r.cap !== null && x > 0 && x < r.cap) x += (r.cap - x) * d; break;
+        case 'mix': if (d < 0) x *= 1 + d * r.f; else if (r.cap !== null && x > 0 && x < r.cap) x += (r.cap - x) * d * Math.min(1, x * 20); break;   // an amount under 5% is lifted in proportion (2026-11-26), so a knob that reads 0% is never lifted to full
         case 'dark': if (d < 0) x += (r.t - x) * -d * r.k; break;
         case 'darkAbove': if (d < 0 && x > r.t) x += (r.t - x) * -d * r.k; break;
         case 'bright': if (d > 0 && x > 0.5) x += (Math.max(x, r.t) - x) * d * r.k; break;
@@ -1401,13 +1414,13 @@ class MorphEngine {
         kind[nSl] = 1;
         this.tune[s] = v[P.pitch] + v[P.fine] / 100;
         // Unison as a wet amount: the center voice always plays; the inner pair fades in over
-        // the first third, the middle pair over the second, the outer pair over the last.
+        // the first half, the outer pair over the second (2026-11-26: five voices at most, was seven, to save CPU).
         const uAmt = v[P.unison], b = s * 7;
         let uni = 0, pw = 0;
         for (let j = 0; j < 7; j++) {
-          const pair = Math.abs(j - 3), gain = pair === 0 ? 1 : Math.max(0, Math.min(1, uAmt * 3 - (pair - 1)));
+          const pair = Math.abs(j - 3), gain = pair === 0 ? 1 : pair === 3 ? 0 : Math.max(0, Math.min(1, uAmt * 2 - (pair - 1)));
           if (gain <= 0) continue;
-          const off = (j - 3) / 3;
+          const off = (j - 3) / 2 * (j < 3 ? 0.93 : 1);   // the lower voices sit a little closer in, so the pairs never beat in step
           this.uJ[b + uni] = j; this.uOff[b + uni] = off * uAmt * 0.5;   // up to ±50 cents at full
           const a = (off * 0.7 + 1) * Math.PI / 4;
           this.uL[b + uni] = Math.cos(a) * Math.SQRT2 * gain; this.uR[b + uni] = Math.sin(a) * Math.SQRT2 * gain;
@@ -1491,8 +1504,8 @@ class MorphEngine {
                 const bc = bk.cur[uLev[b + j]], bp = bk.prev[uLev[b + j]], N = bc.length - 1, pj = b + uJ[b + j];
                 let q = ph[pj];
                 const pos = q * N, i = pos | 0, fr = pos - i;
-                const c = bc[i] + (bc[i + 1] - bc[i]) * fr, od = bp[i] + (bp[i + 1] - bp[i]) * fr;
-                const x = od + (c - od) * xf;
+                let x = bc[i] + (bc[i + 1] - bc[i]) * fr;
+                if (xf < 1) { const od = bp[i] + (bp[i + 1] - bp[i]) * fr; x = od + (x - od) * xf; }   // the old table is read only while the two crossfade
                 xl += x * uL[b + j]; xr += x * uR[b + j];
                 q += uDt[b + j]; if (q >= 1) q -= 1; ph[pj] = q;
               }
@@ -3111,7 +3124,7 @@ DEFS.forEach((d, i) => { if (!d.opts) bindKnob(i); });
    sequencer's knobs move into the panels (Synth, Amp, Filt, FX, Seq), and the Sound and Sequence cards go away. */
 {
   const put = (box, keys) => keys.forEach(k => $(box).appendChild($('k' + IX[k]).closest('.kn')));
-  put('pk_synth', ['wpos', 'mbright', 'o1.unison', 'glide']); put('pk_filt', ['cutoff', 'reso', 'envamt', 'mode']); put('pk_amp', ['aatk', 'adec', 'asus', 'arel', 'menv']); $('k' + IX.menv).closest('.kn').style.display = 'none';   // the Envelope macro is hidden and rests at 50%
+  put('pk_synth', ['wpos', 'o1.unison', 'glide']); put('pk_filt', ['cutoff', 'reso', 'envamt', 'mode']); put('pk_amp', ['aatk', 'adec', 'asus', 'arel', 'menv']); $('k' + IX.menv).closest('.kn').style.display = 'none';   // the Envelope macro is hidden and rests at 50%
   put('pk_fx', ['mfx', 'mwet', 'dmix', 'mmix', 'dlmix', 'rvmix']); put('pk_seq', ['pattern', 'sqdens', 'sqoct', 'sqswing', 'sqgate', 'sqspeed']);
   for (const [k, name] of [['mfx', 'Intensity'], ['mwet', 'Wet'], ['dmix', 'Drive'], ['mmix', 'Mod'], ['dlmix', 'Delay'], ['rvmix', 'Reverb']]) $('k' + IX[k]).closest('.kn').querySelector('.kname').textContent = name;   // four mixes side by side need their effect's name
  $('k' + IX.sqspeed).closest('.kn').style.display = 'none';   // Speed is fixed at 1x and its knob hidden (2026-11-23)
@@ -3119,7 +3132,7 @@ DEFS.forEach((d, i) => { if (!d.opts) bindKnob(i); });
   /* Pitch and Fine are not controls at all (2026-11-25): their knobs are kept out of every view (in a hidden box, so the
      code that redraws knobs still finds them) and tuneZero() holds them at 0 whatever a saved patch or preset says */
   { const box = document.createElement('div'); box.hidden = true; box.id = 'knHidden'; document.body.appendChild(box);
-    DEFS.forEach((d, i) => { if (d.kind === 'osc' && d.eng === 'wt' && (d.key === 'pitch' || d.key === 'fine')) box.appendChild($('k' + i).closest('.kn')); }); }
+    DEFS.forEach((d, i) => { if (d.kind === 'osc' && d.eng === 'wt' && (d.key === 'pitch' || d.key === 'fine')) box.appendChild($('k' + i).closest('.kn')); }); box.appendChild($('k' + IX.mbright).closest('.kn')); }   // Brightness too (2026-11-26): the Filt tab has the filter's own knobs
   for (const g of ['Sound', 'Sequence']) { if (sections[g]) { sections[g].remove(); delete sections[g]; } }
 }
 document.addEventListener('click', e => {
@@ -4233,12 +4246,13 @@ updateSamplerUI();
    Harmonics control and the filter, with the four macros applied), and the
    effects each leave a fitting mark on it, scaled by how much of them is heard:
      Drive       the wave is shaped by the same kind of curve (soft clip, then folding)
-     Formant     the harmonics near the vowel's resonances are lifted, and the vowel's response rises from the floor as a hologram with three peaks
+     Formant     the harmonics near the vowel's resonances are lifted, and a halo around the wave swells at the vowel's three resonances
      Modulation  strands wind around the wave in a helix that turns at the modulation rate
      Delay       echoes leave the wave and travel into the distance in the delay's time (ping-pong: left and right in turn)
      Reverb      the wave glows and sheds a cloud of dust that drifts into the space around it (2026-11-25: these four redrawn in depth)
      Lo-fi       steps in level (Character), sample-and-hold (Codec), a wobble (Wow, Flutter), specks (Noise)
      OTT         the wave is squashed toward full height and the line thickens
+     Unison      (Synth's picture) the detuned voices drift past the wave as fainter copies
    Time-based marks (Modulation, Wow, Flutter, Noise) animate while something can be heard.
    ===================================================================== */
 const scopeEl = $('scope'), fxScopeEl = $('fxscope');
@@ -4290,16 +4304,18 @@ function fxMarks(v) {
 }
 let scopeT = 0, scopeAnim = 0, scopeQueued = false;
 // the Sound panel's wave is plain; the FX panel's carries the effects' marks (2026-11-11)
-function drawScope(now) { drawWaveOn(scopeEl, false, now); return drawWaveOn(fxScopeEl, true, now); }
+let SCW = null;   // the wave is worked out once per frame and shared by the two pictures
+function drawScope(now) { SCW = null; const a = drawWaveOn(scopeEl, false, now), b = drawWaveOn(fxScopeEl, true, now); SCW = null; return a || b; }
 const NO_FX = { drive: 0, formant: 0, mod: 0, delay: 0, reverb: 0, crush: 0, codec: 0, wow: 0, noise: 0, ott: 0 };
 function drawWaveOn(cv, withFx, now) {
   const c = prep(cv); if (!c) return false;
   const v = heardValues(), fx = withFx ? fxMarks(v) : NO_FX, g = c.g, H = c.h, Wd = c.w;
+  const uni = withFx ? 0 : MAC.val[oi(0, 'unison')];
   const colM = mixColor(state.morph), ink = css('--ink');
   const gap = 6, mid0 = gap, midW = Wd - 2 * gap;   // only the wave heard now (2026-11-10): A and B show when a side is focused or the morph is at an end
   const t = (now || performance.now()) / 1000;
   // the wave heard now, with the effects' marks
-  const { w, pk } = scopeWave(v);
+  const { w, pk } = SCW || (SCW = scopeWave(v));
   const n = SC.n, m = H / 2, amp = (H / 2 - 10) / pk * scopeGain();
   const shape = (x0) => {
     let y = x0;
@@ -4350,21 +4366,23 @@ function drawWaveOn(cv, withFx, now) {
     }
   }
   g.globalAlpha = 1; g.strokeStyle = css('--line'); g.lineWidth = 1; g.beginPath(); g.moveTo(mid0, m); g.lineTo(mid0 + midW, m); g.stroke();
-  /* formant (second version, 2026-11-25): the vowel's response rises from the floor as a hologram, three peaks where its
-     resonances are (low to high across the picture; the Vowel moves them, Resonance sharpens them, Mix raises them), drawn
-     in scan lines with a bright edge and two fainter copies behind it for depth */
+  /* formant (third version, 2026-11-26): a halo around the wave itself that swells where the vowel's three resonances are
+     (low to high across the picture; the Vowel moves them, Resonance sharpens them, Mix makes the halo taller and
+     brighter). Layered fills, brightest next to the line, no blur. */
   if (fx.formant > 0.01) {
     const fa = Math.min(1, fx.formant * 1.5), lo = Math.log(380), hi = Math.log(3600), wd = 0.05 + 0.15 * (1 - fx.freso);
     const pk = [700 + 500 * fx.fvowel, 1200 + 1000 * (1 - fx.fvowel), 2600].map(Math.log), hts = [1, 0.85, 0.6];
-    const resp = u => { const lf = lo + u * (hi - lo); let r = 0.06; pk.forEach((c, k) => { r = Math.max(r, hts[k] * Math.exp(-(((lf - c) / wd) ** 2))); }); return r; };
-    const shape = (dx, dy) => { g.beginPath(); g.moveTo(mid0 + dx, H + dy); for (let k = 0; k <= 120; k++) g.lineTo(mid0 + dx + k / 120 * midW, H + dy - resp(k / 120) * H * 0.62 * fa); g.lineTo(mid0 + midW + dx, H + dy); g.closePath(); };
-    g.strokeStyle = colM; g.fillStyle = colM; g.lineWidth = 1;
-    for (const d of [2, 1]) { g.globalAlpha = 0.16 * fa / d; shape(d * 7, -d * 5); g.fill(); g.globalAlpha = 0.3 * fa / d; g.stroke(); }
-    g.save(); shape(0, 0); g.clip();
-    g.globalAlpha = 0.16 * fa; g.fillRect(mid0, 0, midW, H);
-    g.globalAlpha = 0.42 * fa; for (let y = H - 1; y > H * 0.3; y -= 3) g.fillRect(mid0, y, midW, 1);
-    g.restore();
-    g.globalAlpha = 0.95 * fa; g.lineWidth = 1.6; shape(0, 0); g.stroke();
+    const resp = u => { const lf = lo + u * (hi - lo); let r = 0.05; pk.forEach((c, k) => { r = Math.max(r, hts[k] * Math.exp(-(((lf - c) / wd) ** 2))); }); return r; };
+    const K = 96, ys = [], rs = [];
+    for (let k = 0; k <= K; k++) { ys.push(m - yAt(k / K * n, wob) * amp); rs.push(resp(k / K) * H * 0.3 * (0.4 + 0.6 * fa)); }
+    g.fillStyle = colM;
+    for (const L of [1, 0.72, 0.48, 0.28, 0.12]) {
+      g.globalAlpha = 0.13 * fa + 0.05;
+      g.beginPath();
+      for (let k = 0; k <= K; k++) { const x = mid0 + k / K * midW, y = ys[k] - rs[k] * L; k ? g.lineTo(x, y) : g.moveTo(x, y); }
+      for (let k = K; k >= 0; k--) g.lineTo(mid0 + k / K * midW, ys[k] + rs[k] * L);
+      g.closePath(); g.fill();
+    }
   }
   /* delay: the echoes leave the wave and travel into the distance, one every repeat (at the delay's own time), smaller and
      fainter as they go (further with more Feedback); Ping-pong sends them left and right in turn */
@@ -4400,13 +4418,26 @@ function drawWaveOn(cv, withFx, now) {
     }
   };
   helix(false);
-  // the wave itself; with reverb it glows (wider with Size)
-  g.globalAlpha = 1;
-  if (fx.reverb > 0.01) { g.shadowColor = colM; g.shadowBlur = 6 + 30 * fx.rvsize * rv; }
-  g.strokeStyle = colM; g.lineWidth = 3 + 3 * fx.ott;
+  /* unison (Synth's picture, 2026-11-26): the detuned voices are fainter copies of the wave that drift past it, the ones
+     tuned lower one way and those tuned higher the other; they fade in as the engine brings them in (the inner pair
+     over the first half of the knob, the outer pair over the second) and drift faster the further they are detuned */
+  if (uni > 0.005) {
+    g.strokeStyle = colM;
+    for (const j of [-2, 2, -1, 1]) {
+      const gain = Math.max(0, Math.min(1, uni * 2 - (Math.abs(j) - 1))); if (gain <= 0) continue;
+      g.globalAlpha = 0.4 * gain; g.lineWidth = 1.4;
+      path(j * uni * (10 + t * 9), 1 - 0.05 * Math.abs(j), 0, 0); g.stroke();
+    }
+  }
+  // the wave itself; with reverb it glows (wider with Size): wide faint strokes under the line, no blur (2026-11-26, cheaper)
+  g.strokeStyle = colM;
+  if (fx.reverb > 0.01) {
+    const spread = 6 + 30 * fx.rvsize * rv;
+    path(0, 1, 0, 0);
+    for (const q of [1, 0.82, 0.64, 0.46, 0.28]) { g.globalAlpha = 0.045 + 0.07 * rv * (1 - q); g.lineWidth = 3 + spread * q; g.stroke(); }
+  }
+  g.globalAlpha = 1; g.lineWidth = 3 + 3 * fx.ott;
   path(0, 1, 0, 0); g.stroke();
-  if (fx.reverb > 0.01) { g.globalAlpha = Math.min(0.6, fx.reverb) * 0.25; g.lineWidth = 8 + 16 * fx.rvsize; g.stroke(); }
-  g.shadowBlur = 0; g.globalAlpha = 1;
   helix(true);
   g.globalAlpha = 1;
   // lo-fi noise: specks around the line
@@ -4419,7 +4450,7 @@ function drawWaveOn(cv, withFx, now) {
     g.globalAlpha = 1;
   }
   g.restore();
-  return fx.mod > 0.01 || fx.wow > 0.01 || fx.noise > 0.01 || fx.delay > 0.01 || fx.reverb > 0.01;
+  return uni > 0.005 || fx.mod > 0.01 || fx.wow > 0.01 || fx.noise > 0.01 || fx.delay > 0.01 || fx.reverb > 0.01;
 }
 // draw now (next frame); while a moving mark is on screen, keep animating at about 30 frames a second
 function drawScopeSoon() {
@@ -4508,7 +4539,7 @@ function drawEnvPanel() {
 }
 
 /* the filter: where the cutoff goes over a held note (a low C), from note-on through the filter envelope to the release,
-   on a log frequency scale; Resonance makes the line a thicker, lit tube. Side A thin blue, side B thin pink, what you
+   on a log frequency scale (Resonance has no mark of its own, 2026-11-26). Side A thin blue, side B thin pink, what you
    hear now thick in the morph colour. */
 function drawFiltPanel() {
   const c = prep($('filtviz')); if (!c) return;
@@ -4530,17 +4561,6 @@ function drawFiltPanel() {
     for (let k = 0; k <= 200; k++) { const t = k / 200; path.push([pad + 22 + t * (c.w - 2 * pad - 22), yOf(e.cutoff * Math.pow(2, e.envamt * 5 * lvl(e, t * T)))]); }
     const line = (dx, dy) => { g.beginPath(); path.forEach(([x, y], k) => (k ? g.lineTo(x + dx, y + dy) : g.moveTo(x + dx, y + dy))); g.stroke(); };
     g.lineJoin = 'round'; g.lineCap = 'round';
-    if (s === 2) {
-      /* Resonance makes the line a solid tube (2026-11-25, in place of the glow): it thickens with Resonance and is lit from
-         above, with a shadow cast on the picture, a shaded underside, a soft highlight and a thin bright glint */
-      const w = 3.4 + 13 * e.reso, k3 = Math.min(1, e.reso * 2.5);
-      g.globalAlpha = 0.22 * k3; g.strokeStyle = '#000'; g.lineWidth = w; line(2 + w * 0.15, 2 + w * 0.45);
-      g.globalAlpha = 1; g.strokeStyle = cols[2]; g.lineWidth = w; line(0, 0);
-      g.globalAlpha = 0.3 * k3; g.strokeStyle = '#000'; g.lineWidth = w * 0.42; line(0, w * 0.26);
-      g.globalAlpha = 0.5 * k3; g.strokeStyle = '#fff'; g.lineWidth = w * 0.26; line(0, -w * 0.18);
-      g.globalAlpha = 0.9 * k3; g.lineWidth = Math.max(0.8, w * 0.07); line(0, -w * 0.25);
-      continue;
-    }
     g.strokeStyle = cols[s]; g.lineWidth = widths[s]; g.globalAlpha = alpha[s]; line(0, 0);
   }
   g.globalAlpha = 1;
@@ -4578,14 +4598,17 @@ function playDot(g, x, y, col) { g.fillStyle = col; g.beginPath(); g.arc(x, y, 5
 /* The Envelope macro left the player's view (2026-11-23). A patch, preset or side that still holds it away from 50% has
    it worked into the envelope times themselves (the same sums the engine did), so it sounds as it did, and the macro
    then rests at 50%. */
-function bakeEnv(k) {
-  const m = IX.menv; if (state[k][m] === 0.5) return;
+function bakeMacro(k, macro) {
+  const m = IX[macro]; if (state[k][m] === 0.5) return;
   for (let i = 0; i < DEFS.length; i++) { MAC.cur[i] = state[k][i]; MAC.val[i] = MorphEngine.denorm(DEFS[i], MAC.cur[i]); }
-  for (const key of ['mbright', 'mfx', 'mwet']) MAC.cur[IX[key]] = 0.5;   // only the Envelope macro
+  for (const key of ['menv', 'mbright', 'mfx', 'mwet']) if (key !== macro) MAC.cur[IX[key]] = 0.5;   // only this macro
   MorphEngine.prototype.applyMacros.call(MAC);
-  for (const key of ['aatk', 'adec', 'asus', 'arel', 'fatk', 'fdec', 'frel']) state[k][IX[key]] = clamp(MAC.macroT[IX[key]]);
+  for (const [key] of MorphEngine.MACRO_RULES[macro]) if (IX[key] !== undefined) state[k][IX[key]] = clamp(MAC.macroT[IX[key]]);
   state[k][m] = 0.5;
 }
+/* Brightness left the player's view too (2026-11-26): the filter's own knobs are on the Filt tab. It is worked into the
+   cutoff, envelope amount, mode, resonance and Harmonics in the same way, and rests at 50%. */
+function bakeEnv(k) { bakeMacro(k, 'menv'); bakeMacro(k, 'mbright'); }
 /* =====================================================================
    DICE SLIDERS (Orbital's dice, standing up; 2026-11-11 in each panel)
    Every panel has three: A, B and Both (built in ui/panels.js). Touch a
@@ -5497,7 +5520,7 @@ function seqChanged() { seqCache = null; sendSeq(); drawLanes(); if (sq.classLis
    The Seq panel's top-left holds Scale (built in editor.js) and the Walk / Swap pill; its lanes run the full width; Edit
    sits bottom right. The keyboard moved to the Play panel; the bottom panel holds only the morph row. */
 let panel = 'seq', seqPlaying = false, seqPos = null, seqLoop = 1;
-$('pSeqFoot').insertAdjacentHTML('afterbegin', `<button type="button" class="pill" id="walkPill" role="switch" aria-checked="false" aria-label="How differing notes morph: walk or swap"><span>Walk</span><span>Swap</span></button>`);   // bottom row, opposite Edit
+$('pSeqFoot').insertAdjacentHTML('beforeend', `<button type="button" class="pill" id="walkPill" role="switch" aria-checked="false" aria-label="How differing notes morph: walk or swap"><span>Walk</span><span>Swap</span></button>`);   // after Edit, which sits where FX's Edit does (2026-11-26)
 const ICON_PLAY = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M4.5 2.8v10.4L13 8z" fill="currentColor"/></svg>';
 const ICON_STOP = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><rect x="3.5" y="3.5" width="9" height="9" rx="1.2" fill="currentColor"/></svg>';
 function setPlaying(on) {

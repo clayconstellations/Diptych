@@ -201,7 +201,7 @@ class MorphEngine {
       switch (r.mode) {
         case 'lerp': x += ((d < 0 ? r.lo : r.hi) - x) * Math.abs(d); break;
         case 'add': x = Math.max(r.lo, Math.min(1, x + d * r.k)); break;
-        case 'mix': if (d < 0) x *= 1 + d * r.f; else if (r.cap !== null && x > 0 && x < r.cap) x += (r.cap - x) * d; break;
+        case 'mix': if (d < 0) x *= 1 + d * r.f; else if (r.cap !== null && x > 0 && x < r.cap) x += (r.cap - x) * d * Math.min(1, x * 20); break;   // an amount under 5% is lifted in proportion (2026-11-26), so a knob that reads 0% is never lifted to full
         case 'dark': if (d < 0) x += (r.t - x) * -d * r.k; break;
         case 'darkAbove': if (d < 0 && x > r.t) x += (r.t - x) * -d * r.k; break;
         case 'bright': if (d > 0 && x > 0.5) x += (Math.max(x, r.t) - x) * d * r.k; break;
@@ -411,13 +411,13 @@ class MorphEngine {
         kind[nSl] = 1;
         this.tune[s] = v[P.pitch] + v[P.fine] / 100;
         // Unison as a wet amount: the center voice always plays; the inner pair fades in over
-        // the first third, the middle pair over the second, the outer pair over the last.
+        // the first half, the outer pair over the second (2026-11-26: five voices at most, was seven, to save CPU).
         const uAmt = v[P.unison], b = s * 7;
         let uni = 0, pw = 0;
         for (let j = 0; j < 7; j++) {
-          const pair = Math.abs(j - 3), gain = pair === 0 ? 1 : Math.max(0, Math.min(1, uAmt * 3 - (pair - 1)));
+          const pair = Math.abs(j - 3), gain = pair === 0 ? 1 : pair === 3 ? 0 : Math.max(0, Math.min(1, uAmt * 2 - (pair - 1)));
           if (gain <= 0) continue;
-          const off = (j - 3) / 3;
+          const off = (j - 3) / 2 * (j < 3 ? 0.93 : 1);   // the lower voices sit a little closer in, so the pairs never beat in step
           this.uJ[b + uni] = j; this.uOff[b + uni] = off * uAmt * 0.5;   // up to ±50 cents at full
           const a = (off * 0.7 + 1) * Math.PI / 4;
           this.uL[b + uni] = Math.cos(a) * Math.SQRT2 * gain; this.uR[b + uni] = Math.sin(a) * Math.SQRT2 * gain;
@@ -501,8 +501,8 @@ class MorphEngine {
                 const bc = bk.cur[uLev[b + j]], bp = bk.prev[uLev[b + j]], N = bc.length - 1, pj = b + uJ[b + j];
                 let q = ph[pj];
                 const pos = q * N, i = pos | 0, fr = pos - i;
-                const c = bc[i] + (bc[i + 1] - bc[i]) * fr, od = bp[i] + (bp[i + 1] - bp[i]) * fr;
-                const x = od + (c - od) * xf;
+                let x = bc[i] + (bc[i + 1] - bc[i]) * fr;
+                if (xf < 1) { const od = bp[i] + (bp[i + 1] - bp[i]) * fr; x = od + (x - od) * xf; }   // the old table is read only while the two crossfade
                 xl += x * uL[b + j]; xr += x * uR[b + j];
                 q += uDt[b + j]; if (q >= 1) q -= 1; ph[pj] = q;
               }

@@ -10,7 +10,7 @@ const dragKnob = async (page, i, dy) => {
 
 test('side focus: a knob edits only the focused side, one undo step per drag, and redo brings it back', async ({ page }) => {
   await openSynth(page, { dev: false });
-  const i = await page.evaluate(() => IX.mbright);
+  const i = await page.evaluate(() => IX['o1.unison']);
   await page.click('[data-focus="B"]');
   expect(await page.evaluate(i => [$('k' + i).classList.contains('kf-B'), $('hA' + i).style.display], i)).toEqual([true, 'none']);
   const before = await page.evaluate(i => [state.A[i], state.B[i], undoStack.length], i);
@@ -144,10 +144,10 @@ test('the header\'s Everything die rolls every part and both sequences; hold MOR
   expect(r).toEqual({ parts: [true, true, true], seq: true, faces: 5 });
   // hold the MORPH cap (one pointer) and tap B (another)
   await page.evaluate(() => { state.morph = 0.6; updateMorphUI(); });
-  const heard = await page.evaluate(() => resolveNorm(IX.mbright));
+  const heard = await page.evaluate(() => resolveNorm(IX.cutoff));
   await page.evaluate(() => { holdingMorph = true; document.querySelector('[data-focus="B"]').click(); holdingMorph = false; });
-  expect(await page.evaluate(() => [state.morph, focus, Math.abs(state.B[IX.mbright] - resolveNorm(IX.mbright))])).toEqual([1, 'M', 0]);
-  expect(await page.evaluate(() => state.B[IX.mbright])).toBeCloseTo(heard, 9);
+  expect(await page.evaluate(() => [state.morph, focus, Math.abs(state.B[IX.cutoff] - resolveNorm(IX.cutoff))])).toEqual([1, 'M', 0]);
+  expect(await page.evaluate(() => state.B[IX.cutoff])).toBeCloseTo(heard, 9);
 });
 
 test('a die rolls as it is pulled, keeps where you let go (one undo step), and back at the start draws new paths', async ({ page }) => {
@@ -234,8 +234,8 @@ test('FX dice move the FX macros; a locked knob and a locked section stay; Posit
   });
   expect(r).toEqual({ macros: true, locked: true, pos: true, section: true });
   // the padlock and chain under a knob, and the section padlock in a panel's title
-  await page.click(`[data-plink="mbright"]`);
-  expect(await page.evaluate(() => [!!state.links.mbright, state.A[IX.mbright] === state.B[IX.mbright]])).toEqual([true, true]);
+  await page.click(`[data-plink="o1.unison"]`);
+  expect(await page.evaluate(() => [!!state.links['o1.unison'], state.A[IX['o1.unison']] === state.B[IX['o1.unison']]])).toEqual([true, true]);
   await page.click('[data-panellock="synth"]');
   expect(await page.evaluate(() => [state.panelLocks.synth, document.querySelector('.panel[data-panel="synth"]').classList.contains('plocked')])).toEqual([true, true]);
 });
@@ -359,4 +359,21 @@ test('Pitch and Fine are in no view and are held at 0, whatever a saved patch sa
   const r = await page.evaluate(() => { for (let k = 0; k < 5; k++) rollAll(1); applyBulk(() => {});
     return { vals: ['pitch', 'fine'].flatMap(key => ['A', 'B'].map(s => MorphEngine.denorm(DEFS[oi(0, key)], state[s][oi(0, key)]))), shown: ['pitch', 'fine'].map(key => !!$('k' + oi(0, key)).offsetParent) }; });
   expect(r.vals.every(v => Math.abs(v) < 1e-9)).toBe(true); expect(r.shown).toEqual([false, false]);
+});
+
+test('Brightness is in no view: a saved setting is worked into the filter and it rests at 50%; Edit comes first on Seq; an amount that reads 0% is not lifted by Wet', async ({ page }) => {
+  await openSynth(page);
+  const saved = await page.evaluate(async () => { state.A[IX.cutoff] = state.B[IX.cutoff] = 0.6; save(); await new Promise(r => setTimeout(r, 600)); const s = JSON.parse(localStorage.getItem('diptych-v5')); s.A[s.ids.indexOf('mbright')] = 0.1; return JSON.stringify(s); });
+  await openSynth(page, { storage: { 'diptych-v5': saved }, dev: false });
+  const r = await page.evaluate(() => {
+    $('undo').click(); const cut = [state.A[IX.cutoff], state.B[IX.cutoff]], br0 = [state.A[IX.mbright], state.B[IX.mbright]];   // a launch rolls a new patch; Undo brings back the saved one
+    for (let i = 0; i < DEFS.length; i++) MAC.cur[i] = state.A[i];
+    MAC.cur[IX.mmix] = 0.002; MAC.cur[IX.mwet] = 1; MorphEngine.prototype.applyMacros.call(MAC); const low = MAC.macroT[IX.mmix];
+    MAC.cur[IX.mmix] = 0.3; MorphEngine.prototype.applyMacros.call(MAC); const full = MAC.macroT[IX.mmix];
+    for (let k = 0; k < 4; k++) rollAll(1);
+    return { bright: [state.A[IX.mbright], state.B[IX.mbright]], shown: !!$('k' + IX.mbright).offsetParent, first: $('pSeqFoot').firstElementChild.id, low, full, cut, br0 };
+  });
+  expect(r.bright).toEqual([0.5, 0.5]); expect(r.shown).toBe(false); expect(r.first).toBe('seqEdit');
+  expect(r.low).toBeLessThan(0.05); expect(r.full).toBe(1);
+  expect(r.br0).toEqual([0.5, 0.5]); expect(r.cut[0]).toBeCloseTo(0.36, 6); expect(r.cut[1]).toBeCloseTo(0.6, 6);   // the saved Brightness of 10% lowered side A's cutoff; side B's is as saved
 });

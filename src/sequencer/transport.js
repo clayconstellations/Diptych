@@ -2,7 +2,7 @@
    The Seq panel's top-left holds Scale (built in editor.js) and the Walk / Swap pill; its lanes run the full width; Edit
    sits bottom right. The keyboard moved to the Play panel; the bottom panel holds only the morph row. */
 let panel = 'seq', seqPlaying = false, seqPos = null, seqLoop = 1;
-$('pSeqFoot').insertAdjacentHTML('afterbegin', `<button type="button" class="pill" id="walkPill" role="switch" aria-checked="false" aria-label="How differing notes morph: walk or swap"><span>Walk</span><span>Swap</span></button>`);   // bottom row, opposite Edit
+$('pSeqFoot').insertAdjacentHTML('beforeend', `<button type="button" class="pill" id="walkPill" role="switch" aria-checked="false" aria-label="How differing notes morph: walk or swap"><span>Walk</span><span>Swap</span></button>`);   // after Edit, which sits where FX's Edit does (2026-11-26)
 const ICON_PLAY = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M4.5 2.8v10.4L13 8z" fill="currentColor"/></svg>';
 const ICON_STOP = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><rect x="3.5" y="3.5" width="9" height="9" rx="1.2" fill="currentColor"/></svg>';
 function setPlaying(on) {
