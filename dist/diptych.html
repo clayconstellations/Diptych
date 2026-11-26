@@ -201,7 +201,7 @@ main{max-width:780px;margin:0 auto;padding:4px 12px 0;display:flex;flex-wrap:wra
 .knob .now{fill:var(--ink);stroke:var(--surface);stroke-width:1.5}
 .knob .ring{fill:none;stroke:var(--ink);stroke-width:1.5;opacity:0}
 .knob g:focus{outline:none}
-.knob g:focus-visible .ring,.knob g.active .ring{opacity:1}
+.knob g:focus-visible .ring{opacity:1}   /* no circle round a dot while it is dragged (2026-11-26); the keyboard's focus ring stays */
 .knob .ctr .ring{stroke-dasharray:2 2}
 .kval{font-family:var(--font-mono);font-weight:500;font-size:.74rem;min-height:1.3em;white-space:nowrap;padding:1px 5px;border-radius:4px}
 .kn:has(.knob.dragging) .kval{background:var(--hold);color:var(--on-ink)}
@@ -712,8 +712,6 @@ body:not(.dev) .panel .kwrap .icons{display:flex}
 .panel .lock svg{width:13px;height:13px}
 .plock{margin-left:2px;opacity:.5}
 .plock[aria-pressed="true"]{opacity:1;color:var(--ink)}
-.panel.plocked .dbox{opacity:.35}
-.panel.plocked .dicetrack{cursor:default}
 /* the FX rack */
 .panel[data-panel="fx"]{position:relative}
 .rack{position:absolute;inset:0;z-index:6;background:var(--surface);border-radius:14px;padding:10px 12px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
@@ -795,6 +793,29 @@ body:not(.desk) #pk_fx .knob{width:52px;height:52px}
 body:not(.dev) .panel .kwrap{margin-bottom:20px}
 body:not(.dev) .panel .kwrap .icons{bottom:-21px;gap:6px}
 body:not(.dev) .panel .lock svg{width:15px;height:15px}
+/* ===== thirteenth pass (2026-11-26): short pictures, one knob size, a second row of knobs where needed ===== */
+/* phones: every knob is 58 px. Synth, Filt, Amp and FX keep room for two rows of knobs (FX uses both, three and three;
+   a single row sits in the middle), and their pictures share what is left; Seq has one row of five and tall lanes */
+body:not(.desk) .panel > .knobs{height:214px;align-content:center;row-gap:4px}
+body:not(.desk) #pk_seq{height:106px}
+body:not(.desk) #pk_fx{grid-auto-flow:row;grid-template-columns:repeat(3,minmax(0,1fr))}
+body:not(.desk) #pk_synth .knob,body:not(.desk) #pk_filt .knob,body:not(.desk) #pk_amp .knob,body:not(.desk) #pk_fx .knob,body:not(.desk) #pk_seq .knob{width:58px;height:58px}
+body:not(.desk) #pk_fx .kname{font-size:.58rem;letter-spacing:.06em}
+body:not(.desk) .pviz{min-height:48px}
+/* desktop: one row everywhere, every knob 56 px */
+.desk:not(.dev) .panel > .knobs{height:110px}
+.desk:not(.dev) .panel .knob,.desk:not(.dev) #pk_seq .knob,.desk:not(.dev) #pk_fx .knob{width:56px;height:56px}
+/* padlocks on the key and the scale, inside their box */
+.qscale .slock{align-self:center;width:22px;height:22px;margin:0 4px 0 -6px}
+.qscale .slock ~ .key.dd{border-left:1.5px solid var(--k)}
+/* tempo and Swing share one box, like the key and scale; the Steps box in the sequence editor */
+.tpair{display:inline-flex;align-items:stretch;border:1.5px solid var(--k);border-radius:10px;background:var(--cap-hi);box-shadow:1px 1px 0 var(--k),2px 2px 0 var(--k),3px 3px 0 var(--k),4px 4px 0 var(--k);margin-bottom:4px;overflow:hidden}
+.tpair .bpm{border:0;border-radius:0;box-shadow:none;margin:0;background:transparent;height:36px;min-width:46px;padding:0 4px}
+.tpair .bpm + .bpm{border-left:1.5px solid var(--k)}
+.tpair .bpm.drag{background:var(--hold)}
+#swingBox b{font-size:13px} .tpair small{text-transform:uppercase}
+@media (max-width:640px){ .gpre{flex:1 1 0} .tpair .bpm{min-width:42px} }
+#sqLenBox{margin-bottom:0;touch-action:none} #swingBox{touch-action:none}
 </style>
 </head>
 <body>
@@ -807,7 +828,10 @@ body:not(.dev) .panel .lock svg{width:15px;height:15px}
       <button type="button" class="key dd gpre" id="gPre" aria-haspopup="listbox" aria-expanded="false" aria-label="Preset"></button>
       <span class="hctl">
         <button type="button" id="hplay" class="key icon" aria-label="Play"></button>
-        <span class="key bpm" id="bpmBox" role="slider" tabindex="0" aria-label="Tempo, drag up or down, or use arrow keys" aria-valuemin="50" aria-valuemax="200" aria-valuenow="120"><b id="bpmVal">120</b><small>BPM</small></span>
+        <span class="tpair">
+        <span class="bpm" id="bpmBox" role="slider" tabindex="0" aria-label="Tempo, drag up or down, or use arrow keys" aria-valuemin="50" aria-valuemax="200" aria-valuenow="120"><b id="bpmVal">120</b><small>BPM</small></span>
+        <span class="bpm" id="swingBox" role="slider" tabindex="0" aria-label="Swing, drag up or down, or use arrow keys" aria-valuemin="50" aria-valuemax="75" aria-valuenow="50"><b id="swingVal">50%</b><small>SWING</small></span>
+        </span>
         <button type="button" id="undo" class="key icon" aria-label="Undo" disabled></button>
         <button type="button" id="redo" class="key icon" aria-label="Redo" disabled></button>
         <button type="button" id="setBtn" class="key icon" aria-label="Settings"></button>
@@ -957,7 +981,7 @@ body:not(.dev) .panel .lock svg{width:15px;height:15px}
     <div class="edrow sqstrip">
       <button type="button" class="pill" id="sqSide" role="switch" aria-checked="false" aria-label="Side being edited: A or B"><span>Side A</span><span>Side B</span></button>
       <select id="sqRate" aria-label="Rate"></select>
-      <span class="opt"><button type="button" id="sqLenDn" aria-label="Fewer steps">−</button><b id="sqLen">16</b><button type="button" id="sqLenUp" aria-label="More steps">+</button></span>
+      <span class="key bpm" id="sqLenBox" role="slider" tabindex="0" aria-label="Steps, drag up or down, or use arrow keys" aria-valuemin="1" aria-valuemax="32" aria-valuenow="16"><b id="sqLen">16</b><small>Steps</small></span>
       <span class="opt"><button type="button" id="sqLeft" aria-label="Shift pattern one step earlier">←</button><button type="button" id="sqRight" aria-label="Shift pattern one step later">→</button></span>
       <button type="button" id="sqGenOpen">Generate</button>
     </div>
@@ -967,7 +991,7 @@ body:not(.dev) .panel .lock svg{width:15px;height:15px}
       <button type="button" id="sqClear">Clear</button>
       <button type="button" id="sqOther">Copy to B</button>
     </div>
-    <p class="ednote" id="sqHelp" hidden>The strip sets the side you edit, the rate that places notes over the sixteenth grid, the number of steps, and shifts the pattern a step. Tap an empty cell to add a note, or drag across to paint several. Tap a note to remove it, or drag it sideways to change its length. Notes never overlap: a long note stops where the next one starts. The lane below sets how hard each step plays. Generate opens the Arp and Riff generators and the random tools. Key, Density, Octave, Swing and Gate are on the Seq tab.</p>
+    <p class="ednote" id="sqHelp" hidden>The strip sets the side you edit, the rate that places notes over the sixteenth grid, the number of steps (drag the box up or down), and shifts the pattern a step. Tap an empty cell to add a note, or drag across to paint several. Tap a note to remove it, or drag it sideways to change its length. Notes never overlap: a long note stops where the next one starts. The lane below sets how hard each step plays. Generate opens the Arp and Riff generators and the random tools. Density, Octave, Gate and Chance are on the Seq tab; Key and Swing are at the top.</p>
     <span hidden><input type="range" id="sqDens" min="0" max="100" value="100" aria-label="Density"><b id="sqDensVal">100%</b></span>
   </div>
 </div>
@@ -1289,7 +1313,7 @@ class MorphEngine {
   /* ---------- sequencer ----------
      Events are the union of both patterns' note starts on a shared tick grid
      (48 ticks per quarter). Each event is evaluated against the Pattern value
-     when it plays; see seqEval. Nothing here is random. */
+     when it plays; see seqEval. Nothing here is random, except Chance (seqRun), which leaves notes out. */
   static seqAllowed(sc, pc, mm) {
     if (sc.shared[pc]) return true;
     const c = sc.change[pc];
@@ -1321,7 +1345,7 @@ class MorphEngine {
     for (let k = this.offs.length - 1; k >= 0; k--) if (this.offs[k].at <= endT) { this.noteOff(this.offs[k].note); this.offs.splice(k, 1); }
     const mm = this.val[this.I.pattern];
     // Swing: every second sixteenth plays late, by up to half a sixteenth (6 ticks) at 75%; Gate: the share of its length a note sounds
-    const I = this.I, sw = I.sqswing === undefined ? 0 : Math.max(0, Math.min(6, (this.val[I.sqswing] - 0.5) * 24)), gate = I.sqgate === undefined ? 0.92 : this.val[I.sqgate];
+    const I = this.I, sw = I.sqswing === undefined ? 0 : Math.max(0, Math.min(6, (this.val[I.sqswing] - 0.5) * 24)), gate = I.sqgate === undefined ? 0.92 : this.val[I.sqgate], prob = I.sqprob === undefined ? 1 : this.val[I.sqprob];
     const tk = ev => ev.tick + ((ev.tick / 12) % 2 === 1 ? sw : 0);
     let from = this.spos, to = from + adv;
     for (;;) {
@@ -1329,6 +1353,7 @@ class MorphEngine {
       while (this.ei < S.events.length && tk(S.events[this.ei]) < lim) {
         const ev = S.events[this.ei++], r = MorphEngine.seqEval(ev, mm, this.walk, S.scale);
         if (!r) continue;
+        if (prob < 1 && Math.random() >= prob) continue;   // Chance: the note is left out this time (the one before it rings on to its own end)
         // monophonic: a new note always ends the one before it
         for (const o of this.offs) if (o.note !== r.note) this.noteOff(o.note);
         this.offs.length = 0;
@@ -2384,10 +2409,12 @@ DEFS.push({ ...P_('pattern', 'Pattern', 0, 1, 'lin', 0, 1), id:'pattern', group:
    second sixteenth (50% straight, 66% a triplet feel, 75% the most); Gate is how much of its length each note sounds. */
 DEFS.push({ ...P_('sqswing', 'Swing', 0.5, 0.75, 'lin', 0.5, 0.5), id:'sqswing', group:'Sequencer' });
 DEFS.push({ ...P_('sqgate', 'Gate', 0.1, 1, 'lin', 0.92, 0.92), id:'sqgate', group:'Sequencer' });
+// Chance (2026-11-26): the percent chance that each note of the sequence actually plays; morphs like Gate
+DEFS.push({ ...P_('sqprob', 'Chance', 0, 1, 'lin', 1, 1), id:'sqprob', group:'Sequencer' });
 /* Broad sequencer controls (2026-11-06), one setting per side (seq: a side's own setting, shown with A and B handles
    but no morph curve; the Pattern knob does the morphing): Density thins or fills the notes, Speed plays the pattern
    at half, normal or double speed, Octave moves it down or up. The sequencer model reads them (sequencer/model.js). */
-[P_('sqdens', 'Density', 0, 1, 'lin', 1, 1), P_('sqspeed', 'Speed', 0, 2, 'int', 1, 1), P_('sqoct', 'Octave', -1, 1, 'int', 0, 0)]
+[P_('sqdens', 'Density', 0, 1, 'lin', 1, 1), P_('sqspeed', 'Speed', 0, 2, 'int', 1, 1), P_('sqoct', 'Octave', -2, 2, 'int', 0, 0)]
   .forEach(p => DEFS.push({ ...p, id: p.key, group:'Sequence', seq: true }));
 const IX = {}; DEFS.forEach((d, i) => { IX[d.id] = i; });
 // index of an oscillator parameter: oi(0, 'wave') -> IX['o1.wave']; effect parameters are IX.dlmix and so on
@@ -2396,7 +2423,7 @@ const time = v => (v < 0.9995 ? Math.round(v * 1000) + ' ms' : v.toFixed(2) + ' 
 const pct = v => Math.round(v * 100) + '%';
 const FM_RATIOS = [0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];   // OscFM.RATIOS
 const FMT = {
-  sqswing: pct, sqgate: pct, wpos: pct, menv: pct, mbright: pct, mfx: pct, mwet: pct, harm: pct,
+  sqswing: pct, sqgate: pct, sqprob: pct, wpos: pct, menv: pct, mbright: pct, mfx: pct, mwet: pct, harm: pct,
   sqdens: pct, sqspeed: v => ['½×', '1×', '2×'][v], sqoct: v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + ' oct',
   fmx: v => (v < 0.005 ? 'All A' : v > 0.995 ? 'All B' : Math.round(v * 100) + '% B'),
   fpitch: v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + ' st',
@@ -2578,7 +2605,9 @@ function sampleOverview(data, cols = 128) {
 /* ---------- state + persistence ----------
    The fixed architecture (2026-10-17) starts fresh: it saves under a new key and ignores earlier patches, by decision.
    Parameters are matched by id, so patches survive new knobs; list changes need a migration keyed on `ver`. */
-const STORE = 'diptych-v5', STORE_VER = 5;
+const STORE = 'diptych-v5', STORE_VER = 6;
+// ver 6: the sequence's Octave runs from -2 to +2 (it was -1 to +1), so an older value is put where the same octave now sits
+function migrateVals(p) { if (p.ver >= 6 || !Array.isArray(p.ids)) return; const k = p.ids.indexOf('sqoct'); if (k >= 0) for (const s of ['A', 'B']) if (Array.isArray(p[s])) p[s][k] = 0.25 + 0.5 * clamp(+p[s][k]); }
 const DEFAULT_LOCKS = () => ({ level: true, pan: true, pattern: true, 'o1.wave': true, 'o2.wave': true, 'o4.sample': true, 'o5.fmx': true, ottout: true, ottdepth: true });   // OTT Depth: on at 50% and locked by default (2026-11-23)
 const DEFAULT_LINKS = () => ({ 'o1.pitch': true, 'o1.fine': true, 'o2.pitch': true, 'o2.fine': true, 'o4.spitch': true, 'o4.sfine': true, 'o5.fpitch': true, ottout: true });
 const DEFAULT_OSCON = () => OSC_KIND.map(() => true);
@@ -2625,6 +2654,7 @@ const okRef = r => r && typeof r.name === 'string' && (r.id ? typeof r.id === 's
 try {
   const saved = JSON.parse(localStorage.getItem(STORE) || 'null');
   if (saved && Array.isArray(saved.ids) && Array.isArray(saved.A) && saved.ids.length === saved.A.length && saved.B.length === saved.A.length) {
+    migrateVals(saved);
     saved.ids.forEach((id, k) => {
       const i = IX[id]; if (i === undefined) return;
       state.A[i] = clamp(+saved.A[k]); state.B[i] = clamp(+saved.B[k]);
@@ -3008,7 +3038,7 @@ function liveKnobs() {
     return desk || p.dataset.panel === tab;
   }));
 }
-function updateKnobs() { for (const i of liveKnobs()) updateKnob(i); }
+function updateKnobs() { for (const i of liveKnobs()) updateKnob(i); if (typeof updateSwingUI === 'function') updateSwingUI(); }
 function refreshAll() { updateKnobs(); updateMorphUI(); }
 function setParam(side, i, x) {
   x = clamp(x);
@@ -3124,15 +3154,16 @@ DEFS.forEach((d, i) => { if (!d.opts) bindKnob(i); });
    sequencer's knobs move into the panels (Synth, Amp, Filt, FX, Seq), and the Sound and Sequence cards go away. */
 {
   const put = (box, keys) => keys.forEach(k => $(box).appendChild($('k' + IX[k]).closest('.kn')));
-  put('pk_synth', ['wpos', 'o1.unison', 'glide']); put('pk_filt', ['cutoff', 'reso', 'envamt', 'mode']); put('pk_amp', ['aatk', 'adec', 'asus', 'arel', 'menv']); $('k' + IX.menv).closest('.kn').style.display = 'none';   // the Envelope macro is hidden and rests at 50%
-  put('pk_fx', ['mfx', 'mwet', 'dmix', 'mmix', 'dlmix', 'rvmix']); put('pk_seq', ['pattern', 'sqdens', 'sqoct', 'sqswing', 'sqgate', 'sqspeed']);
+  put('pk_synth', ['wpos', 'harm', 'o1.unison', 'glide']); put('pk_filt', ['cutoff', 'reso', 'envamt', 'mode']); put('pk_amp', ['aatk', 'adec', 'asus', 'arel', 'menv']); $('k' + IX.menv).closest('.kn').style.display = 'none';   // the Envelope macro is hidden and rests at 50%
+  put('pk_fx', ['mfx', 'mwet', 'dmix', 'mmix', 'dlmix', 'rvmix']); put('pk_seq', ['pattern', 'sqdens', 'sqoct', 'sqgate', 'sqprob', 'sqspeed']);
   for (const [k, name] of [['mfx', 'Intensity'], ['mwet', 'Wet'], ['dmix', 'Drive'], ['mmix', 'Mod'], ['dlmix', 'Delay'], ['rvmix', 'Reverb']]) $('k' + IX[k]).closest('.kn').querySelector('.kname').textContent = name;   // four mixes side by side need their effect's name
  $('k' + IX.sqspeed).closest('.kn').style.display = 'none';   // Speed is fixed at 1x and its knob hidden (2026-11-23)
   $('patKnob').remove();
   /* Pitch and Fine are not controls at all (2026-11-25): their knobs are kept out of every view (in a hidden box, so the
      code that redraws knobs still finds them) and tuneZero() holds them at 0 whatever a saved patch or preset says */
   { const box = document.createElement('div'); box.hidden = true; box.id = 'knHidden'; document.body.appendChild(box);
-    DEFS.forEach((d, i) => { if (d.kind === 'osc' && d.eng === 'wt' && (d.key === 'pitch' || d.key === 'fine')) box.appendChild($('k' + i).closest('.kn')); }); box.appendChild($('k' + IX.mbright).closest('.kn')); }   // Brightness too (2026-11-26): the Filt tab has the filter's own knobs
+    DEFS.forEach((d, i) => { if (d.kind === 'osc' && d.eng === 'wt' && (d.key === 'pitch' || d.key === 'fine')) box.appendChild($('k' + i).closest('.kn')); }); box.appendChild($('k' + IX.mbright).closest('.kn')); box.appendChild($('k' + IX.sqswing).closest('.kn'));   // Swing is one setting beside the tempo (2026-11-26)
+  }   // Brightness too (2026-11-26): the Filt tab has the filter's own knobs
   for (const g of ['Sound', 'Sequence']) { if (sections[g]) { sections[g].remove(); delete sections[g]; } }
 }
 document.addEventListener('click', e => {
@@ -3147,6 +3178,8 @@ document.addEventListener('click', e => {
 function tuneZero() { DEFS.forEach((d, i) => { if (d.kind === 'osc' && d.eng === 'wt' && (d.key === 'pitch' || d.key === 'fine')) state.A[i] = state.B[i] = MorphEngine.norm(d, 0); }); }
 function syncPair() {
   tuneZero();
+  // Swing is one global setting (the box beside the tempo, 2026-11-26): both sides hold side A's value and no die rolls it
+  state.links.sqswing = true; state.locks.sqswing = true; state.B[IX.sqswing] = state.A[IX.sqswing];
   const w = IX.wpos; if (w === undefined) return;
   if (state.links.wpos) state.A[oi(0, 'posB')] = state.B[oi(0, 'posB')] = state.A[oi(0, 'posA')];   // linked: one position for both tables
   state.A[w] = state.A[oi(0, 'posA')]; state.B[w] = state.A[oi(0, 'posB')];
@@ -3589,7 +3622,7 @@ const logr = (lo, hi) => lo * Math.pow(hi / lo, rnd());
 const RND = {
   // macros: Envelope picks where each side sits between pluck and pad; the others start at 50% ("as generated")
   menv: () => 0.5, mbright: () => 0.5,   // the Envelope macro left the player's view (2026-11-23): it rests at 50% and the amp envelope itself is rolled
-  sqswing: () => (rnd() < 0.6 ? 0.5 : 0.5 + rnd() * 0.17), sqgate: () => 0.45 + rnd() * 0.55, mfx: () => 0.5, mwet: () => 0.5,
+  sqswing: () => (rnd() < 0.6 ? 0.5 : 0.5 + rnd() * 0.17), sqgate: () => 0.45 + rnd() * 0.55, sqprob: () => (rnd() < 0.7 ? 1 : 0.55 + rnd() * 0.45), mfx: () => 0.5, mwet: () => 0.5,
   harm: () => (rnd() < 0.7 ? 1 : 0.6 + rnd() * 0.4),
   // FM: Patch is locked at full range by default, like Wave; each side's patch comes from fmPatch (archetypes)
   fmx: side => (side === 'A' ? 0 : 1), fpitch: () => { const r = rnd(); return r < 0.15 ? -12 : r > 0.85 ? 12 : 0; },
@@ -3708,7 +3741,7 @@ const rv = (d, side) => quant(d, clamp(norm(d, RND[d.key](side, d))));
 // both sides at 0 is fine for them. The rule would otherwise re-roll away their stated odds.
 const SPREAD = 0.15, NO_SPREAD = new Set(['lnmix', 'ottgl', 'ottgm', 'ottgh', 'fmix', 'mmix', 'dlmix', 'rvmix', 'lwow', 'lflut', 'lcodec', 'ldrop',
   'glide', 'unison', 'vdepth', 'vrfade', 'mode', 'byp', 'opan', 'soct', 'sstart', 'strack', 'olevel', 'dmix', 'ottdepth', 'lchar', 'sloop', 'dlspill',
-  'mbright', 'mfx', 'mwet', 'menv', 'sqswing', 'sqgate', 'harm', 'aatk', 'adec', 'asus', 'arel', 'fpitch']);   // 2026-11-06: the Envelope macro now sets A and B apart
+  'mbright', 'mfx', 'mwet', 'menv', 'sqswing', 'sqgate', 'sqprob', 'harm', 'aatk', 'adec', 'asus', 'arel', 'fpitch']);   // 2026-11-06: the Envelope macro now sets A and B apart
 function rvApart(d, side, other) {
   if (NO_SPREAD.has(d.key)) return rv(d, side);
   for (let k = 0; k < 12; k++) { const x = rv(d, side); if (Math.abs(x - other) >= SPREAD) return x; }
@@ -4623,12 +4656,12 @@ function bakeEnv(k) { bakeMacro(k, 'menv'); bakeMacro(k, 'mbright'); }
    as before for the target side(s), everything outside the part goes back to where it was, then every value in the part
    moves only `amt` of the way toward the new roll (stepped values round, switches flip with chance amt; on Sound each
    wavetable is replaced with chance amt). On Sound the guards (level match, sine and loudness guards) run again. */
-const SEQ_P = ['sqdens', 'sqspeed', 'sqoct', 'sqswing', 'sqgate'];   // what the Seq dice roll besides the notes
+const SEQ_P = ['sqdens', 'sqspeed', 'sqoct', 'sqgate', 'sqprob'];   // what the Seq dice roll besides the notes
 const AMP_KEYS = new Set(['aatk', 'adec', 'asus', 'arel', 'menv']);
 const FILT_KEYS = new Set(['cutoff', 'reso', 'mode', 'envamt', 'keytrack', 'fatk', 'fdec', 'fsus', 'frel']);
 const isFxD = d => d.kind === 'fx' || d.key === 'mfx' || d.key === 'mwet', isSeqD = d => !!d.seq || d.group === 'Sequencer';
-/* Section padlocks (2026-11-23): each panel's padlock keeps its part out of every roll: its own dice rest (dimmed) and
-   the Everything die passes over it. Kept with the patch (state.panelLocks). */
+/* Section padlocks (2026-11-23): each panel's padlock keeps its part out of the Everything die's roll. Its own dice
+   still work (2026-11-26: a lock only means "not with everything"). Kept with the patch (state.panelLocks). */
 if (!state.panelLocks || typeof state.panelLocks !== 'object') state.panelLocks = {};
 const panelOf = d => (isSeqD(d) ? 'seq' : AMP_KEYS.has(d.key) ? 'amp' : FILT_KEYS.has(d.key) ? 'filt' : isFxD(d) ? 'fx' : 'synth');   // the filter has its own tab again (2026-11-25)
 const PART = {
@@ -4679,7 +4712,7 @@ const rollAll = s => { rollPart('all', 'M', s); if (!state.panelLocks.seq) rollS
    melody in the scale), with rests and velocities shuffled in proportion. */
 function rollSeq(side, amt) {
   const sides = side === 'M' ? ['A', 'B'] : [side];
-  for (const k of sides) for (const key of ['sqswing', 'sqgate']) if (!state.locks[key]) { const i = IX[key], to = rv(DEFS[i], k); state[k][i] += (to - state[k][i]) * Math.min(1, amt); }
+  for (const k of sides) for (const key of ['sqgate', 'sqprob']) if (!state.locks[key]) { const i = IX[key], to = rv(DEFS[i], k); state[k][i] += (to - state[k][i]) * Math.min(1, amt); }
   if (amt >= 0.9) { if (sides.length === 2) randSeqs(); else randSeqSide(sides[0]); return; }
   for (const k of sides) {
     const q = state.seq[k], fresh = cloneSeq(q);
@@ -4788,7 +4821,7 @@ document.querySelectorAll('.dicetrack').forEach(el => {
     });
   };
   el.addEventListener('pointerdown', e => {
-    e.preventDefault(); if (what !== 'all' && state.panelLocks[what]) return;   // a locked section's dice rest
+    e.preventDefault();
     pid = e.pointerId; el.setPointerCapture(pid); el.classList.add('dragging');
     dieHeld = { what, side, x: 0, P: makePath(what, side), used: false };
     const x = fromY(e.clientY, e.clientX); place(x); live(x);
@@ -4808,7 +4841,7 @@ document.querySelectorAll('.dicetrack').forEach(el => {
   el.addEventListener('keydown', e => {
     const x = e.key === 'Enter' || e.key === ' ' ? 0.5 : /^[1-9]$/.test(e.key) ? +e.key / 10 : e.key === '0' ? 1 : null;
     if (x === null) return;
-    e.preventDefault(); if (what !== 'all' && state.panelLocks[what]) return;
+    e.preventDefault();
     const P = makePath(what, side); pathAt(P, x); commitPath(P); settle();
   });
   place(0);
@@ -4863,7 +4896,7 @@ const COG = (() => {
 $('setBtn').innerHTML = COG;
 const pref = (k, d) => { try { return localStorage.getItem(k) || d; } catch (e) { return d; } };
 const setPref = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
-let bgPref = pref('diptych-bg', 'subtle'), themePref = pref('diptych-theme', 'auto'), schemeIx = Math.max(0, Math.min(SCHEMES.length - 1, +pref('diptych-scheme3', '0') || 0));
+let bgPref = pref('diptych-bg', 'vivid'), themePref = pref('diptych-theme', 'auto'), schemeIx = Math.max(0, Math.min(SCHEMES.length - 1, +pref('diptych-scheme3', '0') || 0));
 const darkMQ = matchMedia('(prefers-color-scheme: dark)');
 const isDark = () => (themePref === 'auto' ? darkMQ.matches : themePref === 'dark');
 function applyTheme() {
@@ -4947,6 +4980,7 @@ function patchNow() {
 function loadPreset(k) {
   const p = readList(PRE_KEY)[k]; if (!p) return;
   bulk(() => {
+    migrateVals(p);
     p.ids.forEach((id, j) => { const i = IX[id]; if (i === undefined) return; state.A[i] = clamp(+p.A[j]); state.B[i] = clamp(+p.B[j]); state.C[i] = clampC(+p.C[j] || 0); });
     for (const key of ['locks', 'secLocks', 'links', 'linkMem', 'panelLocks']) if (p[key]) state[key] = JSON.parse(JSON.stringify(p[key]));
     updatePanelLocks();
@@ -5333,7 +5367,7 @@ const MIXED = 5;
 /* A pattern is always n16 sixteenth-note steps long. The rate lays notes over that grid: a dotted 8th
    pattern of 16 steps holds notes at every third sixteenth, and the last one is cut short at the end.
    s.steps holds one entry per note slot. With Mixed, every slot has its own length (dur). */
-const MIX_POOL = [12, 12, 12, 24, 24, 24, 36, 48, 72];
+const MIX_POOL = [12, 12, 12, 12, 12, 24, 24, 24, 36, 48];   // 2026-11-26: busier (more sixteenths, no dotted quarters)
 const patTicks = s => s.n16 * 12;
 function stepPos(s) {
   const total = patTicks(s), r = RATES[s.rate][1], pos = [];
@@ -5533,6 +5567,10 @@ $('play').addEventListener('click', () => setPlaying(!seqPlaying));
 // the header's play button plays the sequencer from anywhere (and shows its pane)
 $('hplay').addEventListener('click', () => setPlaying(!seqPlaying));
 function setBpm(v) { state.bpm = Math.max(50, Math.min(200, Math.round(v))); $('bpmVal').textContent = state.bpm; $('bpmBox').setAttribute('aria-valuenow', state.bpm); if (ready) send({ type:'bpm', v: state.bpm }); save(); }
+// Swing: one setting for the whole patch, beside the tempo (2026-11-26); 50% is straight, 75% the most
+const swingNow = () => MorphEngine.denorm(DEFS[IX.sqswing], state.A[IX.sqswing]);
+function updateSwingUI() { const v = Math.round(swingNow() * 100); $('swingVal').textContent = v + '%'; $('swingBox').setAttribute('aria-valuenow', v); }
+function setSwing(v) { setParam('A', IX.sqswing, norm(DEFS[IX.sqswing], Math.max(0.5, Math.min(0.75, Math.round(v * 100) / 100)))); updateSwingUI(); }
 function holdRepeat(el, fn) {
   let t1 = null, t2 = null;
   const stop = () => { clearTimeout(t1); clearInterval(t2); };
@@ -5545,6 +5583,13 @@ function holdRepeat(el, fn) {
   el.addEventListener('pointermove', e => { if (e.pointerId === pid) setBpm(b0 + (y0 - e.clientY) / 3); });
   ['pointerup', 'pointercancel'].forEach(t => el.addEventListener(t, () => { pid = null; el.classList.remove('drag'); }));
   el.addEventListener('keydown', e => { const d = e.key === 'ArrowUp' || e.key === 'ArrowRight' ? 1 : e.key === 'ArrowDown' || e.key === 'ArrowLeft' ? -1 : 0; if (d) { e.preventDefault(); setBpm(state.bpm + d * (e.shiftKey ? 10 : 1)); } });
+}
+{ // drag the swing readout up or down
+  const el = $('swingBox'); let pid = null, y0 = 0, s0 = 0, fresh = false;
+  el.addEventListener('pointerdown', e => { e.preventDefault(); pid = e.pointerId; el.setPointerCapture(pid); y0 = e.clientY; s0 = swingNow(); fresh = true; el.classList.add('drag'); });
+  el.addEventListener('pointermove', e => { if (e.pointerId !== pid) return; if (fresh && Math.abs(y0 - e.clientY) > 2) { fresh = false; pushUndo(); } if (!fresh) setSwing(s0 + (y0 - e.clientY) / 400); });
+  ['pointerup', 'pointercancel'].forEach(t => el.addEventListener(t, () => { pid = null; el.classList.remove('drag'); }));
+  el.addEventListener('keydown', e => { const d = e.key === 'ArrowUp' || e.key === 'ArrowRight' ? 1 : e.key === 'ArrowDown' || e.key === 'ArrowLeft' ? -1 : 0; if (d) { e.preventDefault(); pushUndo(); setSwing(swingNow() + d * (e.shiftKey ? 0.05 : 0.01)); } });
 }
 function onReport(d) {
   if (d.type === 'pos' && seqPlaying) { seqPos = d.pos; seqLoop = d.loop; drawLanesSoon(); }
@@ -5613,14 +5658,18 @@ function syncSeqControls() {
   const dn = Math.round(seqDensity(s) * 100); $('sqDens').value = dn; $('sqDensVal').textContent = dn + '%';
   setPill($('sqSide'), sqSide === 'A' ? 0 : 1);
   $('sqRate').value = s.rate;
-  $('sqLen').textContent = s.n16;
+  $('sqLen').textContent = s.n16; $('sqLenBox').setAttribute('aria-valuenow', s.n16);
   $('sqOther').textContent = `Copy to ${sqSide === 'A' ? 'B' : 'A'}`;
 }
 // the shared Scale (root and type) sits at the top left of the Seq panel, and again in the Play panel, where it decides
 // the notes of the grid and which keys are roots (2026-11-11)
-const scaleSel = p => `<span class="qscale"><span class="lbl">Key</span><select id="${p}Root" aria-label="Scale root">${NOTE_NAMES.map((n, i) => `<option value="${i}">${n}</option>`).join('')}</select><select id="${p}Scale" aria-label="Scale type">${Object.keys(SCALES).map(n => `<option>${n}</option>`).join('')}</select></span>`;
+const scaleSel = p => `<span class="qscale"><span class="lbl">Key</span><select id="${p}Root" aria-label="Scale root">${NOTE_NAMES.map((n, i) => `<option value="${i}">${n}</option>`).join('')}</select><button type="button" class="lock slock" data-slock="seqRoot" aria-pressed="false"></button><select id="${p}Scale" aria-label="Scale type">${Object.keys(SCALES).map(n => `<option>${n}</option>`).join('')}</select><button type="button" class="lock slock" data-slock="seqScale" aria-pressed="false"></button></span>`;
 $('hKey').insertAdjacentHTML('afterbegin', scaleSel('q'));   // the Key sits in the header, beside the Everything die (2026-11-11)
+/* Key and scale each have a padlock (2026-11-26): locked, no die changes it (state.locks.seqRoot, state.locks.seqScale) */
+function updateScaleLocks() { document.querySelectorAll('[data-slock]').forEach(b => { const on = !!state.locks[b.dataset.slock], what = b.dataset.slock === 'seqRoot' ? 'key' : 'scale'; b.setAttribute('aria-pressed', on); b.innerHTML = lockIcon(on); b.setAttribute('aria-label', `${on ? 'Unlock' : 'Lock'} the ${what} for the dice`); }); }
+document.addEventListener('click', e => { const b = e.target.closest('[data-slock]'); if (!b) return; state.locks[b.dataset.slock] = !state.locks[b.dataset.slock]; updateScaleLocks(); save(); });
 function syncScaleUI() {
+  updateScaleLocks();
   for (const p of ['q']) { $(p + 'Root').value = state.seq.A.root; $(p + 'Scale').value = state.seq.A.scale; }
   if (typeof buildKeys === 'function') buildKeys();
 }
@@ -5637,8 +5686,14 @@ $('sqRate').addEventListener('change', () => editSeq(s => { s.rate = +$('sqRate'
 function setScale(root, scale) {   // shared by both sides
   ['A', 'B'].forEach(k => { const q = state.seq[k]; q.root = root; q.scale = scale; snapToScale(q); });
 }
-$('sqLenDn').addEventListener('click', () => editSeq(s => { if (s.n16 > 1) { s.n16--; fitSlots(s); } }));
-$('sqLenUp').addEventListener('click', () => editSeq(s => { if (s.n16 < MAXSTEPS) { s.n16++; fitSlots(s); } }));
+{ // the number of steps: a box you drag up or down, like the tempo (2026-11-26; it was − and + keys); one undo step per drag
+  const el = $('sqLenBox'); let pid = null, y0 = 0, n0 = 0, fresh = false;
+  const setLen = n => { const s = cur(); n = Math.max(1, Math.min(MAXSTEPS, Math.round(n))); if (n === s.n16) return; s.n16 = n; fitSlots(s); syncSeqControls(); seqChanged(); };
+  el.addEventListener('pointerdown', e => { e.preventDefault(); pid = e.pointerId; el.setPointerCapture(pid); y0 = e.clientY; n0 = cur().n16; fresh = true; el.classList.add('drag'); });
+  el.addEventListener('pointermove', e => { if (e.pointerId !== pid) return; const n = n0 + Math.round((y0 - e.clientY) / 8); if (fresh && n !== n0) { fresh = false; pushUndo(); } if (!fresh) setLen(n); });
+  ['pointerup', 'pointercancel'].forEach(t => el.addEventListener(t, () => { pid = null; el.classList.remove('drag'); }));
+  el.addEventListener('keydown', e => { const d = e.key === 'ArrowUp' || e.key === 'ArrowRight' ? 1 : e.key === 'ArrowDown' || e.key === 'ArrowLeft' ? -1 : 0; if (d) { e.preventDefault(); pushUndo(); setLen(cur().n16 + d * (e.shiftKey ? 4 : 1)); } });
+}
 ['pointerdown', 'keydown'].forEach(t => $('sqDens').addEventListener(t, () => pushUndo()));
 $('sqDens').addEventListener('input', () => { setParam(sqSide, IX.sqdens, $('sqDens').value / 100); $('sqDensVal').textContent = $('sqDens').value + '%'; });
 // shift the whole pattern one step, wrapping around the loop
@@ -5733,23 +5788,23 @@ function randNotes(s) {
   });
 }
 function randVel(s) { s.steps.forEach(st => { st.vel = 0.05 + Math.random() * 0.95; }); }
-function randRhythm(s) { s.steps.forEach(st => { const x = Math.random(); if (x < 0.1) st.on = false; else if (x < 0.25) st.len = 2; else if (x < 0.33) st.len = 0.5; }); }
+function randRhythm(s) { s.steps.forEach(st => { const x = Math.random(); if (x < 0.07) st.on = false; else if (x < 0.25) st.len = 2; else if (x < 0.33) st.len = 0.5; }); }
 // launch: a new shared scale, then each side gets a whole new 16-step pattern
 function randSeqs() {
   ['A', 'B'].forEach(k => { const q = state.seq[k]; fixSeq(q); q.n16 = 16; fitSlots(q); });
-  setScale(Math.floor(Math.random() * 12), pick(Object.keys(SCALES)));
+  setScale(state.locks.seqRoot ? state.seq.A.root : Math.floor(Math.random() * 12), state.locks.seqScale ? state.seq.A.scale : pick(Object.keys(SCALES)));   // a locked key or scale stays
   ['A', 'B'].forEach(k => fullSeqRandom(state.seq[k]));
 }
 $('rzNotes').addEventListener('click', () => editSeq(randNotes));
 // top bar: new patterns for one side (keeps the shared scale) or both (new scale too)
 // main-page sequence dice and launch: new rate, new generator settings (Arp or Riff), rhythm, velocity,
 // and a density that leans high (never below 50%, 2026-11-06; it was 30%)
-const highDensity = () => 1 - 0.5 * Math.random() ** 2;
+const highDensity = () => 1 - 0.4 * Math.random() ** 3;   // 2026-11-26: denser still (half of all rolls are above 95%)
 /* Random patterns (2026-11-06, owner: "tend toward a note on the downbeat of the bar, and more notes, always at least 5"):
    - at least 5 notes, and usually more: 40% of the note slots (7 of 16 sixteenths), whichever is larger;
    - a note on the downbeat of every bar 95% of the time (it was the first beat only, 90%), and Density keeps it.
    A slow rate that can't fit 5 notes into one bar gets two bars. */
-const MIN_NOTES = 5, NOTE_SHARE = 0.4;
+const MIN_NOTES = 5, NOTE_SHARE = 0.5;   // 2026-11-26: at least half the slots (it was 40%)
 const wantNotes = s => Math.min(s.steps.length, Math.max(MIN_NOTES, Math.ceil(s.steps.length * NOTE_SHARE)));
 function roomForNotes(s) { if (s.steps.length < MIN_NOTES && s.n16 < MAXSTEPS) { s.n16 = MAXSTEPS; fitSlots(s, true); } }
 // the note slots that start a bar (every 16 sixteenths)
@@ -5772,12 +5827,13 @@ function randSpeedOct(q) {
   const k = sideOf(q); if (!k) return;
   const r = RATES[q.rate][1] || 18, x = Math.random();   // Mixed counts as fairly quick
   state[k][IX.sqspeed] = norm(DEFS[IX.sqspeed], 1);
-  const o = Math.random(); state[k][IX.sqoct] = norm(DEFS[IX.sqoct], o < 0.1 ? -1 : o > 0.9 ? 1 : 0);
+  const o = Math.random(); state[k][IX.sqoct] = norm(DEFS[IX.sqoct], o < 0.04 ? -2 : o < 0.14 ? -1 : o > 0.985 ? 2 : o > 0.89 ? 1 : 0);   // two octaves up is rare (1.5%)
 }
 function fullSeqRandom(q) { fixSeq(q); randRate(q); roomForNotes(q); randArpSettings(); genFromControls(q); randRhythm(q); randVel(q); setSeqDensity(q, highDensity()); randSpeedOct(q); shapeRandom(q); }
 function randSeqSide(k) { fullSeqRandom(state.seq[k]); }
 $('rzVel').addEventListener('click', () => editSeq(randVel));
-function randRate(s) { s.rate = Math.floor(Math.random() * RATES.length); fitSlots(s, true); }
+// 2026-11-26: quick rates far more often (1/16 40%, Mixed 28%, 1/8 16%, dotted 1/8 8%, 1/4 5%, dotted 1/4 3%); they were equally likely
+function randRate(s) { const x = Math.random(); s.rate = x < 0.4 ? 4 : x < 0.68 ? MIXED : x < 0.84 ? 2 : x < 0.92 ? 3 : x < 0.97 ? 0 : 1; fitSlots(s, true); }
 $('rzRate').addEventListener('click', () => editSeq(randRate));
 $('rzArp').addEventListener('click', () => editSeq(s => { randArpSettings(); genFromControls(s); }));
 function randAllSide(s) { randRate(s); roomForNotes(s); randArpSettings(); genFromControls(s); randRhythm(s); randVel(s); setSeqDensity(s, 0.5 + 0.5 * Math.random()); shapeRandom(s); }
@@ -5931,7 +5987,7 @@ refreshAll();
 updateBlendUI();
 bakeEnv('A'); bakeEnv('B');   // an older session's Envelope macro becomes envelope times
 // Every launch starts from a fresh random patch and fresh 16-step sequences. Undo brings back the last session.
-bulk(() => { randomizeAll(); randSeqs(); });
+bulk(() => { randomizeAll(); randSeqs(); state.locks.pattern = true; state.A[IX.pattern] = 0; state.B[IX.pattern] = 1; });   // Pattern starts locked at its full range: All A to All B (2026-11-26)
 setBpm(85 + Math.random() * 50);
 window.addEventListener('resize', () => { drawWaves(); if (ed.classList.contains('open')) { drawEditor(); renderStrip(); } });
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { drawWaves(); if (ed.classList.contains('open')) { drawEditor(); renderStrip(); } });

@@ -209,7 +209,7 @@ function liveKnobs() {
     return desk || p.dataset.panel === tab;
   }));
 }
-function updateKnobs() { for (const i of liveKnobs()) updateKnob(i); }
+function updateKnobs() { for (const i of liveKnobs()) updateKnob(i); if (typeof updateSwingUI === 'function') updateSwingUI(); }
 function refreshAll() { updateKnobs(); updateMorphUI(); }
 function setParam(side, i, x) {
   x = clamp(x);
@@ -325,15 +325,16 @@ DEFS.forEach((d, i) => { if (!d.opts) bindKnob(i); });
    sequencer's knobs move into the panels (Synth, Amp, Filt, FX, Seq), and the Sound and Sequence cards go away. */
 {
   const put = (box, keys) => keys.forEach(k => $(box).appendChild($('k' + IX[k]).closest('.kn')));
-  put('pk_synth', ['wpos', 'o1.unison', 'glide']); put('pk_filt', ['cutoff', 'reso', 'envamt', 'mode']); put('pk_amp', ['aatk', 'adec', 'asus', 'arel', 'menv']); $('k' + IX.menv).closest('.kn').style.display = 'none';   // the Envelope macro is hidden and rests at 50%
-  put('pk_fx', ['mfx', 'mwet', 'dmix', 'mmix', 'dlmix', 'rvmix']); put('pk_seq', ['pattern', 'sqdens', 'sqoct', 'sqswing', 'sqgate', 'sqspeed']);
+  put('pk_synth', ['wpos', 'harm', 'o1.unison', 'glide']); put('pk_filt', ['cutoff', 'reso', 'envamt', 'mode']); put('pk_amp', ['aatk', 'adec', 'asus', 'arel', 'menv']); $('k' + IX.menv).closest('.kn').style.display = 'none';   // the Envelope macro is hidden and rests at 50%
+  put('pk_fx', ['mfx', 'mwet', 'dmix', 'mmix', 'dlmix', 'rvmix']); put('pk_seq', ['pattern', 'sqdens', 'sqoct', 'sqgate', 'sqprob', 'sqspeed']);
   for (const [k, name] of [['mfx', 'Intensity'], ['mwet', 'Wet'], ['dmix', 'Drive'], ['mmix', 'Mod'], ['dlmix', 'Delay'], ['rvmix', 'Reverb']]) $('k' + IX[k]).closest('.kn').querySelector('.kname').textContent = name;   // four mixes side by side need their effect's name
  $('k' + IX.sqspeed).closest('.kn').style.display = 'none';   // Speed is fixed at 1x and its knob hidden (2026-11-23)
   $('patKnob').remove();
   /* Pitch and Fine are not controls at all (2026-11-25): their knobs are kept out of every view (in a hidden box, so the
      code that redraws knobs still finds them) and tuneZero() holds them at 0 whatever a saved patch or preset says */
   { const box = document.createElement('div'); box.hidden = true; box.id = 'knHidden'; document.body.appendChild(box);
-    DEFS.forEach((d, i) => { if (d.kind === 'osc' && d.eng === 'wt' && (d.key === 'pitch' || d.key === 'fine')) box.appendChild($('k' + i).closest('.kn')); }); box.appendChild($('k' + IX.mbright).closest('.kn')); }   // Brightness too (2026-11-26): the Filt tab has the filter's own knobs
+    DEFS.forEach((d, i) => { if (d.kind === 'osc' && d.eng === 'wt' && (d.key === 'pitch' || d.key === 'fine')) box.appendChild($('k' + i).closest('.kn')); }); box.appendChild($('k' + IX.mbright).closest('.kn')); box.appendChild($('k' + IX.sqswing).closest('.kn'));   // Swing is one setting beside the tempo (2026-11-26)
+  }   // Brightness too (2026-11-26): the Filt tab has the filter's own knobs
   for (const g of ['Sound', 'Sequence']) { if (sections[g]) { sections[g].remove(); delete sections[g]; } }
 }
 document.addEventListener('click', e => {
@@ -348,6 +349,8 @@ document.addEventListener('click', e => {
 function tuneZero() { DEFS.forEach((d, i) => { if (d.kind === 'osc' && d.eng === 'wt' && (d.key === 'pitch' || d.key === 'fine')) state.A[i] = state.B[i] = MorphEngine.norm(d, 0); }); }
 function syncPair() {
   tuneZero();
+  // Swing is one global setting (the box beside the tempo, 2026-11-26): both sides hold side A's value and no die rolls it
+  state.links.sqswing = true; state.locks.sqswing = true; state.B[IX.sqswing] = state.A[IX.sqswing];
   const w = IX.wpos; if (w === undefined) return;
   if (state.links.wpos) state.A[oi(0, 'posB')] = state.B[oi(0, 'posB')] = state.A[oi(0, 'posA')];   // linked: one position for both tables
   state.A[w] = state.A[oi(0, 'posA')]; state.B[w] = state.A[oi(0, 'posB')];

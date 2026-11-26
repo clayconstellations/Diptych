@@ -286,7 +286,7 @@ class MorphEngine {
   /* ---------- sequencer ----------
      Events are the union of both patterns' note starts on a shared tick grid
      (48 ticks per quarter). Each event is evaluated against the Pattern value
-     when it plays; see seqEval. Nothing here is random. */
+     when it plays; see seqEval. Nothing here is random, except Chance (seqRun), which leaves notes out. */
   static seqAllowed(sc, pc, mm) {
     if (sc.shared[pc]) return true;
     const c = sc.change[pc];
@@ -318,7 +318,7 @@ class MorphEngine {
     for (let k = this.offs.length - 1; k >= 0; k--) if (this.offs[k].at <= endT) { this.noteOff(this.offs[k].note); this.offs.splice(k, 1); }
     const mm = this.val[this.I.pattern];
     // Swing: every second sixteenth plays late, by up to half a sixteenth (6 ticks) at 75%; Gate: the share of its length a note sounds
-    const I = this.I, sw = I.sqswing === undefined ? 0 : Math.max(0, Math.min(6, (this.val[I.sqswing] - 0.5) * 24)), gate = I.sqgate === undefined ? 0.92 : this.val[I.sqgate];
+    const I = this.I, sw = I.sqswing === undefined ? 0 : Math.max(0, Math.min(6, (this.val[I.sqswing] - 0.5) * 24)), gate = I.sqgate === undefined ? 0.92 : this.val[I.sqgate], prob = I.sqprob === undefined ? 1 : this.val[I.sqprob];
     const tk = ev => ev.tick + ((ev.tick / 12) % 2 === 1 ? sw : 0);
     let from = this.spos, to = from + adv;
     for (;;) {
@@ -326,6 +326,7 @@ class MorphEngine {
       while (this.ei < S.events.length && tk(S.events[this.ei]) < lim) {
         const ev = S.events[this.ei++], r = MorphEngine.seqEval(ev, mm, this.walk, S.scale);
         if (!r) continue;
+        if (prob < 1 && Math.random() >= prob) continue;   // Chance: the note is left out this time (the one before it rings on to its own end)
         // monophonic: a new note always ends the one before it
         for (const o of this.offs) if (o.note !== r.note) this.noteOff(o.note);
         this.offs.length = 0;

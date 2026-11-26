@@ -12,7 +12,7 @@ const MIXED = 5;
 /* A pattern is always n16 sixteenth-note steps long. The rate lays notes over that grid: a dotted 8th
    pattern of 16 steps holds notes at every third sixteenth, and the last one is cut short at the end.
    s.steps holds one entry per note slot. With Mixed, every slot has its own length (dur). */
-const MIX_POOL = [12, 12, 12, 24, 24, 24, 36, 48, 72];
+const MIX_POOL = [12, 12, 12, 12, 12, 24, 24, 24, 36, 48];   // 2026-11-26: busier (more sixteenths, no dotted quarters)
 const patTicks = s => s.n16 * 12;
 function stepPos(s) {
   const total = patTicks(s), r = RATES[s.rate][1], pos = [];

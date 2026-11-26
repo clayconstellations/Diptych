@@ -21,14 +21,18 @@ function syncSeqControls() {
   const dn = Math.round(seqDensity(s) * 100); $('sqDens').value = dn; $('sqDensVal').textContent = dn + '%';
   setPill($('sqSide'), sqSide === 'A' ? 0 : 1);
   $('sqRate').value = s.rate;
-  $('sqLen').textContent = s.n16;
+  $('sqLen').textContent = s.n16; $('sqLenBox').setAttribute('aria-valuenow', s.n16);
   $('sqOther').textContent = `Copy to ${sqSide === 'A' ? 'B' : 'A'}`;
 }
 // the shared Scale (root and type) sits at the top left of the Seq panel, and again in the Play panel, where it decides
 // the notes of the grid and which keys are roots (2026-11-11)
-const scaleSel = p => `<span class="qscale"><span class="lbl">Key</span><select id="${p}Root" aria-label="Scale root">${NOTE_NAMES.map((n, i) => `<option value="${i}">${n}</option>`).join('')}</select><select id="${p}Scale" aria-label="Scale type">${Object.keys(SCALES).map(n => `<option>${n}</option>`).join('')}</select></span>`;
+const scaleSel = p => `<span class="qscale"><span class="lbl">Key</span><select id="${p}Root" aria-label="Scale root">${NOTE_NAMES.map((n, i) => `<option value="${i}">${n}</option>`).join('')}</select><button type="button" class="lock slock" data-slock="seqRoot" aria-pressed="false"></button><select id="${p}Scale" aria-label="Scale type">${Object.keys(SCALES).map(n => `<option>${n}</option>`).join('')}</select><button type="button" class="lock slock" data-slock="seqScale" aria-pressed="false"></button></span>`;
 $('hKey').insertAdjacentHTML('afterbegin', scaleSel('q'));   // the Key sits in the header, beside the Everything die (2026-11-11)
+/* Key and scale each have a padlock (2026-11-26): locked, no die changes it (state.locks.seqRoot, state.locks.seqScale) */
+function updateScaleLocks() { document.querySelectorAll('[data-slock]').forEach(b => { const on = !!state.locks[b.dataset.slock], what = b.dataset.slock === 'seqRoot' ? 'key' : 'scale'; b.setAttribute('aria-pressed', on); b.innerHTML = lockIcon(on); b.setAttribute('aria-label', `${on ? 'Unlock' : 'Lock'} the ${what} for the dice`); }); }
+document.addEventListener('click', e => { const b = e.target.closest('[data-slock]'); if (!b) return; state.locks[b.dataset.slock] = !state.locks[b.dataset.slock]; updateScaleLocks(); save(); });
 function syncScaleUI() {
+  updateScaleLocks();
   for (const p of ['q']) { $(p + 'Root').value = state.seq.A.root; $(p + 'Scale').value = state.seq.A.scale; }
   if (typeof buildKeys === 'function') buildKeys();
 }
@@ -45,8 +49,14 @@ $('sqRate').addEventListener('change', () => editSeq(s => { s.rate = +$('sqRate'
 function setScale(root, scale) {   // shared by both sides
   ['A', 'B'].forEach(k => { const q = state.seq[k]; q.root = root; q.scale = scale; snapToScale(q); });
 }
-$('sqLenDn').addEventListener('click', () => editSeq(s => { if (s.n16 > 1) { s.n16--; fitSlots(s); } }));
-$('sqLenUp').addEventListener('click', () => editSeq(s => { if (s.n16 < MAXSTEPS) { s.n16++; fitSlots(s); } }));
+{ // the number of steps: a box you drag up or down, like the tempo (2026-11-26; it was − and + keys); one undo step per drag
+  const el = $('sqLenBox'); let pid = null, y0 = 0, n0 = 0, fresh = false;
+  const setLen = n => { const s = cur(); n = Math.max(1, Math.min(MAXSTEPS, Math.round(n))); if (n === s.n16) return; s.n16 = n; fitSlots(s); syncSeqControls(); seqChanged(); };
+  el.addEventListener('pointerdown', e => { e.preventDefault(); pid = e.pointerId; el.setPointerCapture(pid); y0 = e.clientY; n0 = cur().n16; fresh = true; el.classList.add('drag'); });
+  el.addEventListener('pointermove', e => { if (e.pointerId !== pid) return; const n = n0 + Math.round((y0 - e.clientY) / 8); if (fresh && n !== n0) { fresh = false; pushUndo(); } if (!fresh) setLen(n); });
+  ['pointerup', 'pointercancel'].forEach(t => el.addEventListener(t, () => { pid = null; el.classList.remove('drag'); }));
+  el.addEventListener('keydown', e => { const d = e.key === 'ArrowUp' || e.key === 'ArrowRight' ? 1 : e.key === 'ArrowDown' || e.key === 'ArrowLeft' ? -1 : 0; if (d) { e.preventDefault(); pushUndo(); setLen(cur().n16 + d * (e.shiftKey ? 4 : 1)); } });
+}
 ['pointerdown', 'keydown'].forEach(t => $('sqDens').addEventListener(t, () => pushUndo()));
 $('sqDens').addEventListener('input', () => { setParam(sqSide, IX.sqdens, $('sqDens').value / 100); $('sqDensVal').textContent = $('sqDens').value + '%'; });
 // shift the whole pattern one step, wrapping around the loop
@@ -141,23 +151,23 @@ function randNotes(s) {
   });
 }
 function randVel(s) { s.steps.forEach(st => { st.vel = 0.05 + Math.random() * 0.95; }); }
-function randRhythm(s) { s.steps.forEach(st => { const x = Math.random(); if (x < 0.1) st.on = false; else if (x < 0.25) st.len = 2; else if (x < 0.33) st.len = 0.5; }); }
+function randRhythm(s) { s.steps.forEach(st => { const x = Math.random(); if (x < 0.07) st.on = false; else if (x < 0.25) st.len = 2; else if (x < 0.33) st.len = 0.5; }); }
 // launch: a new shared scale, then each side gets a whole new 16-step pattern
 function randSeqs() {
   ['A', 'B'].forEach(k => { const q = state.seq[k]; fixSeq(q); q.n16 = 16; fitSlots(q); });
-  setScale(Math.floor(Math.random() * 12), pick(Object.keys(SCALES)));
+  setScale(state.locks.seqRoot ? state.seq.A.root : Math.floor(Math.random() * 12), state.locks.seqScale ? state.seq.A.scale : pick(Object.keys(SCALES)));   // a locked key or scale stays
   ['A', 'B'].forEach(k => fullSeqRandom(state.seq[k]));
 }
 $('rzNotes').addEventListener('click', () => editSeq(randNotes));
 // top bar: new patterns for one side (keeps the shared scale) or both (new scale too)
 // main-page sequence dice and launch: new rate, new generator settings (Arp or Riff), rhythm, velocity,
 // and a density that leans high (never below 50%, 2026-11-06; it was 30%)
-const highDensity = () => 1 - 0.5 * Math.random() ** 2;
+const highDensity = () => 1 - 0.4 * Math.random() ** 3;   // 2026-11-26: denser still (half of all rolls are above 95%)
 /* Random patterns (2026-11-06, owner: "tend toward a note on the downbeat of the bar, and more notes, always at least 5"):
    - at least 5 notes, and usually more: 40% of the note slots (7 of 16 sixteenths), whichever is larger;
    - a note on the downbeat of every bar 95% of the time (it was the first beat only, 90%), and Density keeps it.
    A slow rate that can't fit 5 notes into one bar gets two bars. */
-const MIN_NOTES = 5, NOTE_SHARE = 0.4;
+const MIN_NOTES = 5, NOTE_SHARE = 0.5;   // 2026-11-26: at least half the slots (it was 40%)
 const wantNotes = s => Math.min(s.steps.length, Math.max(MIN_NOTES, Math.ceil(s.steps.length * NOTE_SHARE)));
 function roomForNotes(s) { if (s.steps.length < MIN_NOTES && s.n16 < MAXSTEPS) { s.n16 = MAXSTEPS; fitSlots(s, true); } }
 // the note slots that start a bar (every 16 sixteenths)
@@ -180,12 +190,13 @@ function randSpeedOct(q) {
   const k = sideOf(q); if (!k) return;
   const r = RATES[q.rate][1] || 18, x = Math.random();   // Mixed counts as fairly quick
   state[k][IX.sqspeed] = norm(DEFS[IX.sqspeed], 1);
-  const o = Math.random(); state[k][IX.sqoct] = norm(DEFS[IX.sqoct], o < 0.1 ? -1 : o > 0.9 ? 1 : 0);
+  const o = Math.random(); state[k][IX.sqoct] = norm(DEFS[IX.sqoct], o < 0.04 ? -2 : o < 0.14 ? -1 : o > 0.985 ? 2 : o > 0.89 ? 1 : 0);   // two octaves up is rare (1.5%)
 }
 function fullSeqRandom(q) { fixSeq(q); randRate(q); roomForNotes(q); randArpSettings(); genFromControls(q); randRhythm(q); randVel(q); setSeqDensity(q, highDensity()); randSpeedOct(q); shapeRandom(q); }
 function randSeqSide(k) { fullSeqRandom(state.seq[k]); }
 $('rzVel').addEventListener('click', () => editSeq(randVel));
-function randRate(s) { s.rate = Math.floor(Math.random() * RATES.length); fitSlots(s, true); }
+// 2026-11-26: quick rates far more often (1/16 40%, Mixed 28%, 1/8 16%, dotted 1/8 8%, 1/4 5%, dotted 1/4 3%); they were equally likely
+function randRate(s) { const x = Math.random(); s.rate = x < 0.4 ? 4 : x < 0.68 ? MIXED : x < 0.84 ? 2 : x < 0.92 ? 3 : x < 0.97 ? 0 : 1; fitSlots(s, true); }
 $('rzRate').addEventListener('click', () => editSeq(randRate));
 $('rzArp').addEventListener('click', () => editSeq(s => { randArpSettings(); genFromControls(s); }));
 function randAllSide(s) { randRate(s); roomForNotes(s); randArpSettings(); genFromControls(s); randRhythm(s); randVel(s); setSeqDensity(s, 0.5 + 0.5 * Math.random()); shapeRandom(s); }

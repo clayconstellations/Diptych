@@ -176,14 +176,14 @@ test('ver 2 patches: each pattern\'s Density becomes its side\'s Density setting
 
 test.describe('player\'s view on a phone', () => {
   test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
-  test('the panels as tabs: one at a time, one row of knobs, no page scroll', async ({ page }) => {
+  test('the panels as tabs: one at a time, one row of knobs (two on FX), no page scroll', async ({ page }) => {
     await openSynth(page, { dev: false });
     for (const t of ['synth', 'filt', 'amp', 'fx', 'seq', 'play']) {
       await page.locator(`[data-tab="${t}"]`).tap();
       const m = await page.evaluate(t => {
         const shown = [...document.querySelectorAll('.panel')].filter(p => p.offsetParent).map(p => p.dataset.panel);
         const tops = [...document.querySelectorAll(`.panel[data-panel="${t}"] .knobs .kn`)].filter(k => k.offsetParent).map(k => Math.round(k.getBoundingClientRect().top));
-        return { shown, oneRow: new Set(tops).size <= 1,   // every panel has one row of knobs (2026-11-25)
+        return { shown, oneRow: new Set(tops).size <= (t === 'fx' ? 2 : 1),   // one row of knobs, and FX has two rows of three (2026-11-26)
           side: document.documentElement.scrollWidth - innerWidth, down: document.documentElement.scrollHeight - innerHeight, view: !!$('viewPill').offsetParent,
           morph: $('morph').getBoundingClientRect().bottom <= innerHeight };
       }, t);

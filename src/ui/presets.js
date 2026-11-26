@@ -38,6 +38,7 @@ function patchNow() {
 function loadPreset(k) {
   const p = readList(PRE_KEY)[k]; if (!p) return;
   bulk(() => {
+    migrateVals(p);
     p.ids.forEach((id, j) => { const i = IX[id]; if (i === undefined) return; state.A[i] = clamp(+p.A[j]); state.B[i] = clamp(+p.B[j]); state.C[i] = clampC(+p.C[j] || 0); });
     for (const key of ['locks', 'secLocks', 'links', 'linkMem', 'panelLocks']) if (p[key]) state[key] = JSON.parse(JSON.stringify(p[key]));
     updatePanelLocks();

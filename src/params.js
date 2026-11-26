@@ -107,10 +107,12 @@ DEFS.push({ ...P_('pattern', 'Pattern', 0, 1, 'lin', 0, 1), id:'pattern', group:
    second sixteenth (50% straight, 66% a triplet feel, 75% the most); Gate is how much of its length each note sounds. */
 DEFS.push({ ...P_('sqswing', 'Swing', 0.5, 0.75, 'lin', 0.5, 0.5), id:'sqswing', group:'Sequencer' });
 DEFS.push({ ...P_('sqgate', 'Gate', 0.1, 1, 'lin', 0.92, 0.92), id:'sqgate', group:'Sequencer' });
+// Chance (2026-11-26): the percent chance that each note of the sequence actually plays; morphs like Gate
+DEFS.push({ ...P_('sqprob', 'Chance', 0, 1, 'lin', 1, 1), id:'sqprob', group:'Sequencer' });
 /* Broad sequencer controls (2026-11-06), one setting per side (seq: a side's own setting, shown with A and B handles
    but no morph curve; the Pattern knob does the morphing): Density thins or fills the notes, Speed plays the pattern
    at half, normal or double speed, Octave moves it down or up. The sequencer model reads them (sequencer/model.js). */
-[P_('sqdens', 'Density', 0, 1, 'lin', 1, 1), P_('sqspeed', 'Speed', 0, 2, 'int', 1, 1), P_('sqoct', 'Octave', -1, 1, 'int', 0, 0)]
+[P_('sqdens', 'Density', 0, 1, 'lin', 1, 1), P_('sqspeed', 'Speed', 0, 2, 'int', 1, 1), P_('sqoct', 'Octave', -2, 2, 'int', 0, 0)]
   .forEach(p => DEFS.push({ ...p, id: p.key, group:'Sequence', seq: true }));
 const IX = {}; DEFS.forEach((d, i) => { IX[d.id] = i; });
 // index of an oscillator parameter: oi(0, 'wave') -> IX['o1.wave']; effect parameters are IX.dlmix and so on
@@ -119,7 +121,7 @@ const time = v => (v < 0.9995 ? Math.round(v * 1000) + ' ms' : v.toFixed(2) + ' 
 const pct = v => Math.round(v * 100) + '%';
 const FM_RATIOS = [0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];   // OscFM.RATIOS
 const FMT = {
-  sqswing: pct, sqgate: pct, wpos: pct, menv: pct, mbright: pct, mfx: pct, mwet: pct, harm: pct,
+  sqswing: pct, sqgate: pct, sqprob: pct, wpos: pct, menv: pct, mbright: pct, mfx: pct, mwet: pct, harm: pct,
   sqdens: pct, sqspeed: v => ['½×', '1×', '2×'][v], sqoct: v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + ' oct',
   fmx: v => (v < 0.005 ? 'All A' : v > 0.995 ? 'All B' : Math.round(v * 100) + '% B'),
   fpitch: v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + ' st',

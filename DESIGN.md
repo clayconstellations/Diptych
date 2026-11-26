@@ -613,3 +613,18 @@ Owner's notes after the ninth pass, and what was built.
 - **Seq: Edit comes first**, then Walk / Swap, so Edit is where FX's Edit is.
 - **Sizes.** Pictures are smaller (phone 142 px high, was 182; desktop 73, was 101 at 1280 x 800) and the knobs larger (phone 70 px on Synth, Filt and Amp, 60 on Seq, 52 on FX; desktop 64 and 56). The padlock and chain sit in their own row under the knob, clear of the ring, with the reading below them.
 
+### Thirteenth pass (2026-11-26)
+- **Harmonics has a knob** on Synth (Position, Harmonics, Unison, Glide), now that Brightness no longer reaches it.
+- **Swing is one global setting**, in a box joined to the tempo's in the header (drag up or down, 50% to 75%). The parameter `sqswing` stays, so patches load and the engine reads it as before, but both sides always hold side A's value and it is locked, so no die moves it (`syncPair`). Its knob is hidden.
+- **Key and scale each have a padlock** in their box (`state.locks.seqRoot`, `state.locks.seqScale`): locked, no roll changes it.
+- **A locked section's own dice work.** The section padlock now only keeps the section out of the Everything die's roll; the dice are no longer dimmed.
+- **Vivid is the default background** (a stored choice is kept).
+- **Layout: short pictures, one knob size.** Phones: every knob is 58 px. Synth, Filt, Amp and FX reserve room for two rows of knobs and share what is left for the picture (62 px at 390 x 720, more on taller screens); FX uses both rows (Intensity, Wet, Drive / Mod, Delay, Reverb), a single row sits in the middle of the space. Seq has one row of five (Pattern, Density, Octave, Gate, Chance) and lanes about 170 px high. Desktop: one row everywhere, every knob 56 px, pictures 81 px at 1280 x 800.
+- **Seq Octave runs from -2 to +2.** Rolls: -2 4%, -1 10%, 0 75%, +1 9.5%, +2 1.5%. Saved patches and presets from before (ver 5 and lower) keep the octave they had (`migrateVals`, `STORE_VER` 6).
+- **No circle round a knob's dot while it is dragged** (the keyboard focus ring stays).
+- **Random sequences are quicker and denser.** Rate: 1/16 40%, Mixed 28%, 1/8 16%, dotted 1/8 8%, 1/4 5%, dotted 1/4 3% (they were equally likely). Mixed draws more sixteenths and no dotted quarters. At least half the slots hold notes (was 40%), fewer random rests (7%, was 10%), and Density leans higher (half of all rolls above 95%).
+- **Chance** (`sqprob`, a morphing parameter like Gate, on the Seq tab where Swing was): the percent chance that each note of the sequence plays. The engine draws it per note as it plays (the one random thing in playback); at 100% no number is drawn. Rolls: 100% at 70%, otherwise 55 to 100%.
+- **Pattern starts locked at its full range** on every launch (A at All A, B at All B).
+- **Sequence editor: Steps is a box you drag** up or down (arrow keys work), in place of the - and + keys.
+- **Not built yet: the new sequence generator.** The owner asked for thoughts first; the proposal is in the reply of this date (one generator instead of Arp and Riff, a seed plus a few morphing knobs, chord progressions, no sub-sheet).
+

@@ -15,6 +15,10 @@ $('play').addEventListener('click', () => setPlaying(!seqPlaying));
 // the header's play button plays the sequencer from anywhere (and shows its pane)
 $('hplay').addEventListener('click', () => setPlaying(!seqPlaying));
 function setBpm(v) { state.bpm = Math.max(50, Math.min(200, Math.round(v))); $('bpmVal').textContent = state.bpm; $('bpmBox').setAttribute('aria-valuenow', state.bpm); if (ready) send({ type:'bpm', v: state.bpm }); save(); }
+// Swing: one setting for the whole patch, beside the tempo (2026-11-26); 50% is straight, 75% the most
+const swingNow = () => MorphEngine.denorm(DEFS[IX.sqswing], state.A[IX.sqswing]);
+function updateSwingUI() { const v = Math.round(swingNow() * 100); $('swingVal').textContent = v + '%'; $('swingBox').setAttribute('aria-valuenow', v); }
+function setSwing(v) { setParam('A', IX.sqswing, norm(DEFS[IX.sqswing], Math.max(0.5, Math.min(0.75, Math.round(v * 100) / 100)))); updateSwingUI(); }
 function holdRepeat(el, fn) {
   let t1 = null, t2 = null;
   const stop = () => { clearTimeout(t1); clearInterval(t2); };
@@ -27,6 +31,13 @@ function holdRepeat(el, fn) {
   el.addEventListener('pointermove', e => { if (e.pointerId === pid) setBpm(b0 + (y0 - e.clientY) / 3); });
   ['pointerup', 'pointercancel'].forEach(t => el.addEventListener(t, () => { pid = null; el.classList.remove('drag'); }));
   el.addEventListener('keydown', e => { const d = e.key === 'ArrowUp' || e.key === 'ArrowRight' ? 1 : e.key === 'ArrowDown' || e.key === 'ArrowLeft' ? -1 : 0; if (d) { e.preventDefault(); setBpm(state.bpm + d * (e.shiftKey ? 10 : 1)); } });
+}
+{ // drag the swing readout up or down
+  const el = $('swingBox'); let pid = null, y0 = 0, s0 = 0, fresh = false;
+  el.addEventListener('pointerdown', e => { e.preventDefault(); pid = e.pointerId; el.setPointerCapture(pid); y0 = e.clientY; s0 = swingNow(); fresh = true; el.classList.add('drag'); });
+  el.addEventListener('pointermove', e => { if (e.pointerId !== pid) return; if (fresh && Math.abs(y0 - e.clientY) > 2) { fresh = false; pushUndo(); } if (!fresh) setSwing(s0 + (y0 - e.clientY) / 400); });
+  ['pointerup', 'pointercancel'].forEach(t => el.addEventListener(t, () => { pid = null; el.classList.remove('drag'); }));
+  el.addEventListener('keydown', e => { const d = e.key === 'ArrowUp' || e.key === 'ArrowRight' ? 1 : e.key === 'ArrowDown' || e.key === 'ArrowLeft' ? -1 : 0; if (d) { e.preventDefault(); pushUndo(); setSwing(swingNow() + d * (e.shiftKey ? 0.05 : 0.01)); } });
 }
 function onReport(d) {
   if (d.type === 'pos' && seqPlaying) { seqPos = d.pos; seqLoop = d.loop; drawLanesSoon(); }

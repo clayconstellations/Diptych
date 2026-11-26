@@ -1,7 +1,9 @@
 /* ---------- state + persistence ----------
    The fixed architecture (2026-10-17) starts fresh: it saves under a new key and ignores earlier patches, by decision.
    Parameters are matched by id, so patches survive new knobs; list changes need a migration keyed on `ver`. */
-const STORE = 'diptych-v5', STORE_VER = 5;
+const STORE = 'diptych-v5', STORE_VER = 6;
+// ver 6: the sequence's Octave runs from -2 to +2 (it was -1 to +1), so an older value is put where the same octave now sits
+function migrateVals(p) { if (p.ver >= 6 || !Array.isArray(p.ids)) return; const k = p.ids.indexOf('sqoct'); if (k >= 0) for (const s of ['A', 'B']) if (Array.isArray(p[s])) p[s][k] = 0.25 + 0.5 * clamp(+p[s][k]); }
 const DEFAULT_LOCKS = () => ({ level: true, pan: true, pattern: true, 'o1.wave': true, 'o2.wave': true, 'o4.sample': true, 'o5.fmx': true, ottout: true, ottdepth: true });   // OTT Depth: on at 50% and locked by default (2026-11-23)
 const DEFAULT_LINKS = () => ({ 'o1.pitch': true, 'o1.fine': true, 'o2.pitch': true, 'o2.fine': true, 'o4.spitch': true, 'o4.sfine': true, 'o5.fpitch': true, ottout: true });
 const DEFAULT_OSCON = () => OSC_KIND.map(() => true);
@@ -48,6 +50,7 @@ const okRef = r => r && typeof r.name === 'string' && (r.id ? typeof r.id === 's
 try {
   const saved = JSON.parse(localStorage.getItem(STORE) || 'null');
   if (saved && Array.isArray(saved.ids) && Array.isArray(saved.A) && saved.ids.length === saved.A.length && saved.B.length === saved.A.length) {
+    migrateVals(saved);
     saved.ids.forEach((id, k) => {
       const i = IX[id]; if (i === undefined) return;
       state.A[i] = clamp(+saved.A[k]); state.B[i] = clamp(+saved.B[k]);

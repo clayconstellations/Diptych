@@ -284,17 +284,18 @@ test('a side preset never changes which table a side reads, so the other end of 
   expect(r.first).toBe(0); expect(r.second).toBeGreaterThan(2000); expect(r.shorter).toBe(true);   // half a sixteenth at 120 bpm is 3000 samples
 });
 
-test('six tabs; the pictures are the same size on every tab; one reading under each knob, and it follows the morph', async ({ page }) => {
+test('six tabs; the pictures are short and the same size on Synth, Filt, Amp and FX, the lanes on Seq taller; every knob is one size; one reading under each knob', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 720 });
   await openSynth(page, { dev: false });
   const sizes = [];
   for (const t of ['synth', 'filt', 'amp', 'fx', 'seq']) {
     await page.locator(`[data-tab="${t}"]`).click();
     sizes.push(await page.evaluate(() => { const p = document.querySelector('.panel.on'), r = p.querySelector('.pviz').getBoundingClientRect();
-      return { h: Math.round(r.height), fits: p.scrollHeight <= p.clientHeight + 1, ab: [...p.querySelectorAll('.kab')].filter(k => k.offsetParent).length }; }));
+      return { h: Math.round(r.height), kn: [...new Set([...p.querySelectorAll('.knob')].filter(k => k.offsetParent).map(k => Math.round(k.getBoundingClientRect().width)))].join(), fits: p.scrollHeight <= p.clientHeight + 1, ab: [...p.querySelectorAll('.kab')].filter(k => k.offsetParent).length }; }));
   }
-  expect(new Set(sizes.map(s => s.h)).size).toBe(1);
-  expect(sizes[0].h).toBeGreaterThan(120);
+  expect(new Set(sizes.slice(0, 4).map(s => s.h)).size).toBe(1);
+  expect(sizes[0].h).toBeGreaterThan(45); expect(sizes[0].h).toBeLessThan(110); expect(sizes[4].h).toBeGreaterThan(sizes[0].h + 60);
+  expect(sizes.map(s => s.kn)).toEqual(['58', '58', '58', '58', '58']);
   expect(sizes.every(s => s.fits && s.ab === 0)).toBe(true);
   // Density is each side's own setting: its reading passes from A's value to B's as the morph moves
   await page.locator('[data-tab="seq"]').click();
@@ -313,7 +314,7 @@ test('the Filt dice roll only the filter; the Synth dice leave the filter and th
     for (const part of ['filt', 'synth']) {
       const A0 = state.A.slice(), B0 = state.B.slice(); rollPart(part, 'M', 1);
       const ch = DEFS.filter((d, i) => state.A[i] !== A0[i] || state.B[i] !== B0[i]).map(d => d.key);
-      out[part] = { n: ch.length, filt: ch.filter(k => FILT_KEYS.has(k)).length };
+      out[part] = { n: ch.length, filt: ch.filter(k => FILT_KEYS.has(k) && (part === 'filt' || (k !== 'cutoff' && k !== 'mode'))).length };   // on a Synth roll the sine guard may still open the cutoff or leave band-pass for a near-sine wave
     }
     let off = 0;
     for (let k = 0; k < 30; k++) { rollPart('synth', 'M', 1); rollAll(1); for (const key of ['pitch', 'fine']) for (const s of ['A', 'B']) if (MorphEngine.denorm(DEFS[oi(0, key)], state[s][oi(0, key)]) !== 0) off++; }
@@ -376,4 +377,76 @@ test('Brightness is in no view: a saved setting is worked into the filter and it
   expect(r.bright).toEqual([0.5, 0.5]); expect(r.shown).toBe(false); expect(r.first).toBe('seqEdit');
   expect(r.low).toBeLessThan(0.05); expect(r.full).toBe(1);
   expect(r.br0).toEqual([0.5, 0.5]); expect(r.cut[0]).toBeCloseTo(0.36, 6); expect(r.cut[1]).toBeCloseTo(0.6, 6);   // the saved Brightness of 10% lowered side A's cutoff; side B's is as saved
+});
+
+test('Swing is one setting beside the tempo; key and scale have padlocks; a locked section still rolls with its own dice; Pattern starts locked at full range', async ({ page }) => {
+  await openSynth(page, { dev: false });
+  const r = await page.evaluate(() => {
+    const out = { start: [state.locks.pattern, state.A[IX.pattern], state.B[IX.pattern]], vivid: document.body.classList.contains('vivid'),
+      harm: $('k' + IX.harm).closest('#pk_synth') !== null, swingKnob: !!$('k' + IX.sqswing).offsetParent, chance: $('k' + IX.sqprob).closest('#pk_seq') !== null };
+    // Swing: the box sets both sides, and no die moves it
+    $('swingBox').focus(); for (let k = 0; k < 8; k++) $('swingBox').dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    const sw = () => ['A', 'B'].map(s => Math.round(MorphEngine.denorm(DEFS[IX.sqswing], state[s][IX.sqswing]) * 100));
+    out.swing = sw(); out.swingText = $('swingVal').textContent;
+    state.panelLocks = {}; for (let k = 0; k < 6; k++) { bulk(() => rollAll(1)); bulk(() => rollSeq('M', 1)); }
+    out.swingAfter = sw();
+    // key and scale: locked, they stay through every roll; unlocked, they move
+    state.locks.seqRoot = true; state.locks.seqScale = true; const k0 = [state.seq.A.root, state.seq.A.scale];
+    for (let k = 0; k < 12; k++) bulk(() => rollAll(1));
+    out.keyHeld = state.seq.A.root === k0[0] && state.seq.A.scale === k0[1] && state.seq.B.scale === k0[1];
+    state.locks.seqRoot = false; state.locks.seqScale = false; const seen = new Set();
+    for (let k = 0; k < 12; k++) { bulk(() => rollAll(1)); seen.add(state.seq.A.root + state.seq.A.scale); }
+    out.keyMoves = seen.size > 3;
+    // a locked section: the Everything die passes over it, its own dice still roll it
+    state.panelLocks = { amp: true, seq: true }; const a0 = state.A[IX.adec], q0 = JSON.stringify(state.seq);
+    bulk(() => rollAll(1)); out.allSkips = state.A[IX.adec] === a0 && JSON.stringify(state.seq) === q0;
+    return out;
+  });
+  expect(r.start).toEqual([true, 0, 1]); expect(r.vivid).toBe(true); expect(r.harm).toBe(true); expect(r.swingKnob).toBe(false); expect(r.chance).toBe(true);
+  expect(r.swing).toEqual([58, 58]); expect(r.swingText).toBe('58%'); expect(r.swingAfter).toEqual([58, 58]);
+  expect(r.keyHeld).toBe(true); expect(r.keyMoves).toBe(true); expect(r.allSkips).toBe(true);
+  await page.click('[data-slock="seqRoot"]');
+  expect(await page.evaluate(() => [state.locks.seqRoot, document.querySelector('[data-slock="seqRoot"]').getAttribute('aria-pressed')])).toEqual([true, 'true']);
+  // the locked Amp and Seq sections' own dice (pressed with the keyboard: 0 is a full roll)
+  const own = await page.evaluate(() => {
+    const a0 = state.A.slice(), q0 = JSON.stringify(state.seq), key = el => el.dispatchEvent(new KeyboardEvent('keydown', { key: '0', bubbles: true }));
+    key(document.querySelector('.dicetrack[data-what="amp"][data-side="M"]')); key(document.querySelector('.dicetrack[data-what="seq"][data-side="M"]'));
+    return [DEFS.some((d, i) => AMP_KEYS.has(d.key) && state.A[i] !== a0[i]), JSON.stringify(state.seq) !== q0];
+  });
+  expect(own).toEqual([true, true]);
+});
+
+test('Seq: Octave runs two octaves each way (two up is rare) and an older patch keeps its octave; quick rates are favoured; Chance leaves notes out; Steps is a box', async ({ page }) => {
+  await openSynth(page);
+  const saved = await page.evaluate(async () => { save(); await new Promise(r => setTimeout(r, 600)); const s = JSON.parse(localStorage.getItem('diptych-v5')); const k = s.ids.indexOf('sqoct'); s.ver = 5; s.A[k] = 0; s.B[k] = 1; return JSON.stringify(s); });
+  await openSynth(page, { storage: { 'diptych-v5': saved }, dev: false });
+  const r = await page.evaluate(() => {
+    $('undo').click();   // a launch rolls a new patch; Undo brings back the saved one
+    const oct = s => MorphEngine.denorm(DEFS[IX.sqoct], state[s][IX.sqoct]), out = { old: [oct('A'), oct('B')] };
+    const seen = {}, rates = {}; state.panelLocks = {};
+    for (let k = 0; k < 400; k++) { randSeqs(); for (const s of ['A', 'B']) { seen[oct(s)] = (seen[oct(s)] || 0) + 1; const rt = RATES[state.seq[s].rate][0]; rates[rt] = (rates[rt] || 0) + 1; } }
+    out.seen = seen; out.quick = ((rates['1/16'] || 0) + (rates.Mixed || 0)) / 800;
+    // Chance in the engine
+    const defs = DEFS.map(({ id, key, min, max, curve, snap, kind, slot, eng }) => ({ id, key, min, max, curve, snap: !!snap, kind, slot, eng }));
+    const run = prob => { const e = new MorphEngine(48000, defs); const A = state.A.slice(); A[IX.sqprob] = prob; A[IX.sqswing] = 0;
+      e.handle({ type: 'state', A, B: A, C: state.C, morph: 0 }); e.handle({ type: 'bpm', v: 200 });
+      e.handle({ type: 'seq', seq: { events: [0, 12, 24, 36].map(t => ({ tick: t, thr: 0.5, a: { p: 60, v: 1, l: 12 }, b: { p: 60, v: 1, l: 12 } })), loop: 48, scale: { shared: Array(12).fill(true), change: Array(12).fill(null) } } });
+      e.handle({ type: 'seqPlay', on: true });
+      let on = 0; const o1 = e.noteOn.bind(e); e.noteOn = (a, b) => { on++; o1(a, b); };
+      const L = new Float32Array(128), R = new Float32Array(128);
+      for (let n = 0; n < 48000 * 6; n += 128) { L.fill(0); R.fill(0); e.render(L, R, 128); }
+      return on; };
+    out.notes = [run(1), run(0.5), run(0)];
+    // the Steps box in the editor: arrow keys, one undo step each
+    openSeq('A'); const n0 = state.seq.A.n16, u0 = undoStack.length;
+    $('sqLenBox').dispatchEvent(new KeyboardEvent('keydown', { key: n0 < 32 ? 'ArrowUp' : 'ArrowDown', bubbles: true }));
+    out.len = [Math.abs(state.seq.A.n16 - n0), undoStack.length - u0, $('sqLen').textContent === String(state.seq.A.n16), !!$('sqLenBox').offsetParent];
+    return out;
+  });
+  expect(r.old).toEqual([-1, 1]);
+  expect(Object.keys(r.seen).every(k => Math.abs(+k) <= 2)).toBe(true);
+  expect(r.seen[0]).toBeGreaterThan(500); expect(r.seen[-2] || 0).toBeGreaterThan(5); expect(r.seen[2] || 0).toBeLessThan(35);
+  expect(r.quick).toBeGreaterThan(0.55);
+  expect(r.notes[0]).toBeGreaterThan(70); expect(r.notes[1]).toBeGreaterThan(r.notes[0] * 0.3); expect(r.notes[1]).toBeLessThan(r.notes[0] * 0.7); expect(r.notes[2]).toBe(0);
+  expect(r.len).toEqual([1, 1, true, true]);
 });

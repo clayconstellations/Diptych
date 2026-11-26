@@ -271,8 +271,6 @@ body:not(.dev) .panel .kwrap .icons{display:flex}
 .panel .lock svg{width:13px;height:13px}
 .plock{margin-left:2px;opacity:.5}
 .plock[aria-pressed="true"]{opacity:1;color:var(--ink)}
-.panel.plocked .dbox{opacity:.35}
-.panel.plocked .dicetrack{cursor:default}
 /* the FX rack */
 .panel[data-panel="fx"]{position:relative}
 .rack{position:absolute;inset:0;z-index:6;background:var(--surface);border-radius:14px;padding:10px 12px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
@@ -354,3 +352,26 @@ body:not(.desk) #pk_fx .knob{width:52px;height:52px}
 body:not(.dev) .panel .kwrap{margin-bottom:20px}
 body:not(.dev) .panel .kwrap .icons{bottom:-21px;gap:6px}
 body:not(.dev) .panel .lock svg{width:15px;height:15px}
+/* ===== thirteenth pass (2026-11-26): short pictures, one knob size, a second row of knobs where needed ===== */
+/* phones: every knob is 58 px. Synth, Filt, Amp and FX keep room for two rows of knobs (FX uses both, three and three;
+   a single row sits in the middle), and their pictures share what is left; Seq has one row of five and tall lanes */
+body:not(.desk) .panel > .knobs{height:214px;align-content:center;row-gap:4px}
+body:not(.desk) #pk_seq{height:106px}
+body:not(.desk) #pk_fx{grid-auto-flow:row;grid-template-columns:repeat(3,minmax(0,1fr))}
+body:not(.desk) #pk_synth .knob,body:not(.desk) #pk_filt .knob,body:not(.desk) #pk_amp .knob,body:not(.desk) #pk_fx .knob,body:not(.desk) #pk_seq .knob{width:58px;height:58px}
+body:not(.desk) #pk_fx .kname{font-size:.58rem;letter-spacing:.06em}
+body:not(.desk) .pviz{min-height:48px}
+/* desktop: one row everywhere, every knob 56 px */
+.desk:not(.dev) .panel > .knobs{height:110px}
+.desk:not(.dev) .panel .knob,.desk:not(.dev) #pk_seq .knob,.desk:not(.dev) #pk_fx .knob{width:56px;height:56px}
+/* padlocks on the key and the scale, inside their box */
+.qscale .slock{align-self:center;width:22px;height:22px;margin:0 4px 0 -6px}
+.qscale .slock ~ .key.dd{border-left:1.5px solid var(--k)}
+/* tempo and Swing share one box, like the key and scale; the Steps box in the sequence editor */
+.tpair{display:inline-flex;align-items:stretch;border:1.5px solid var(--k);border-radius:10px;background:var(--cap-hi);box-shadow:1px 1px 0 var(--k),2px 2px 0 var(--k),3px 3px 0 var(--k),4px 4px 0 var(--k);margin-bottom:4px;overflow:hidden}
+.tpair .bpm{border:0;border-radius:0;box-shadow:none;margin:0;background:transparent;height:36px;min-width:46px;padding:0 4px}
+.tpair .bpm + .bpm{border-left:1.5px solid var(--k)}
+.tpair .bpm.drag{background:var(--hold)}
+#swingBox b{font-size:13px} .tpair small{text-transform:uppercase}
+@media (max-width:640px){ .gpre{flex:1 1 0} .tpair .bpm{min-width:42px} }
+#sqLenBox{margin-bottom:0;touch-action:none} #swingBox{touch-action:none}

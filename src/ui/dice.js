@@ -12,12 +12,12 @@
    as before for the target side(s), everything outside the part goes back to where it was, then every value in the part
    moves only `amt` of the way toward the new roll (stepped values round, switches flip with chance amt; on Sound each
    wavetable is replaced with chance amt). On Sound the guards (level match, sine and loudness guards) run again. */
-const SEQ_P = ['sqdens', 'sqspeed', 'sqoct', 'sqswing', 'sqgate'];   // what the Seq dice roll besides the notes
+const SEQ_P = ['sqdens', 'sqspeed', 'sqoct', 'sqgate', 'sqprob'];   // what the Seq dice roll besides the notes
 const AMP_KEYS = new Set(['aatk', 'adec', 'asus', 'arel', 'menv']);
 const FILT_KEYS = new Set(['cutoff', 'reso', 'mode', 'envamt', 'keytrack', 'fatk', 'fdec', 'fsus', 'frel']);
 const isFxD = d => d.kind === 'fx' || d.key === 'mfx' || d.key === 'mwet', isSeqD = d => !!d.seq || d.group === 'Sequencer';
-/* Section padlocks (2026-11-23): each panel's padlock keeps its part out of every roll: its own dice rest (dimmed) and
-   the Everything die passes over it. Kept with the patch (state.panelLocks). */
+/* Section padlocks (2026-11-23): each panel's padlock keeps its part out of the Everything die's roll. Its own dice
+   still work (2026-11-26: a lock only means "not with everything"). Kept with the patch (state.panelLocks). */
 if (!state.panelLocks || typeof state.panelLocks !== 'object') state.panelLocks = {};
 const panelOf = d => (isSeqD(d) ? 'seq' : AMP_KEYS.has(d.key) ? 'amp' : FILT_KEYS.has(d.key) ? 'filt' : isFxD(d) ? 'fx' : 'synth');   // the filter has its own tab again (2026-11-25)
 const PART = {
@@ -68,7 +68,7 @@ const rollAll = s => { rollPart('all', 'M', s); if (!state.panelLocks.seq) rollS
    melody in the scale), with rests and velocities shuffled in proportion. */
 function rollSeq(side, amt) {
   const sides = side === 'M' ? ['A', 'B'] : [side];
-  for (const k of sides) for (const key of ['sqswing', 'sqgate']) if (!state.locks[key]) { const i = IX[key], to = rv(DEFS[i], k); state[k][i] += (to - state[k][i]) * Math.min(1, amt); }
+  for (const k of sides) for (const key of ['sqgate', 'sqprob']) if (!state.locks[key]) { const i = IX[key], to = rv(DEFS[i], k); state[k][i] += (to - state[k][i]) * Math.min(1, amt); }
   if (amt >= 0.9) { if (sides.length === 2) randSeqs(); else randSeqSide(sides[0]); return; }
   for (const k of sides) {
     const q = state.seq[k], fresh = cloneSeq(q);
@@ -177,7 +177,7 @@ document.querySelectorAll('.dicetrack').forEach(el => {
     });
   };
   el.addEventListener('pointerdown', e => {
-    e.preventDefault(); if (what !== 'all' && state.panelLocks[what]) return;   // a locked section's dice rest
+    e.preventDefault();
     pid = e.pointerId; el.setPointerCapture(pid); el.classList.add('dragging');
     dieHeld = { what, side, x: 0, P: makePath(what, side), used: false };
     const x = fromY(e.clientY, e.clientX); place(x); live(x);
@@ -197,7 +197,7 @@ document.querySelectorAll('.dicetrack').forEach(el => {
   el.addEventListener('keydown', e => {
     const x = e.key === 'Enter' || e.key === ' ' ? 0.5 : /^[1-9]$/.test(e.key) ? +e.key / 10 : e.key === '0' ? 1 : null;
     if (x === null) return;
-    e.preventDefault(); if (what !== 'all' && state.panelLocks[what]) return;
+    e.preventDefault();
     const P = makePath(what, side); pathAt(P, x); commitPath(P); settle();
   });
   place(0);

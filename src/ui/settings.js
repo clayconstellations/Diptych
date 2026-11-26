@@ -25,7 +25,7 @@ const COG = (() => {
 $('setBtn').innerHTML = COG;
 const pref = (k, d) => { try { return localStorage.getItem(k) || d; } catch (e) { return d; } };
 const setPref = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
-let bgPref = pref('diptych-bg', 'subtle'), themePref = pref('diptych-theme', 'auto'), schemeIx = Math.max(0, Math.min(SCHEMES.length - 1, +pref('diptych-scheme3', '0') || 0));
+let bgPref = pref('diptych-bg', 'vivid'), themePref = pref('diptych-theme', 'auto'), schemeIx = Math.max(0, Math.min(SCHEMES.length - 1, +pref('diptych-scheme3', '0') || 0));
 const darkMQ = matchMedia('(prefers-color-scheme: dark)');
 const isDark = () => (themePref === 'auto' ? darkMQ.matches : themePref === 'dark');
 function applyTheme() {

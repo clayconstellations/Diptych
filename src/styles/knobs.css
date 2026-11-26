@@ -38,7 +38,7 @@ main{max-width:780px;margin:0 auto;padding:4px 12px 0;display:flex;flex-wrap:wra
 .knob .now{fill:var(--ink);stroke:var(--surface);stroke-width:1.5}
 .knob .ring{fill:none;stroke:var(--ink);stroke-width:1.5;opacity:0}
 .knob g:focus{outline:none}
-.knob g:focus-visible .ring,.knob g.active .ring{opacity:1}
+.knob g:focus-visible .ring{opacity:1}   /* no circle round a dot while it is dragged (2026-11-26); the keyboard's focus ring stays */
 .knob .ctr .ring{stroke-dasharray:2 2}
 .kval{font-family:var(--font-mono);font-weight:500;font-size:.74rem;min-height:1.3em;white-space:nowrap;padding:1px 5px;border-radius:4px}
 .kn:has(.knob.dragging) .kval{background:var(--hold);color:var(--on-ink)}
